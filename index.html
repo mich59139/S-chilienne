@@ -1,495 +1,511 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Séchilienne — Histoire (hiérarchie + sous-pages)</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/marked@12.0.2/marked.min.js"></script>
-  <style>
-    .no-scrollbar::-webkit-scrollbar{ display:none; }
-    .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
-    #map { height: 26rem; }
-    @media (min-width: 768px){ #map { height: 32rem; } }
-    .leaflet-control-layers-expanded { max-height: 220px; overflow:auto; }
-    .prose p{ margin: .5rem 0; }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Séchilienne — Histoire & Patrimoines</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/marked@12.0.2/marked.min.js"></script>
+<style>
+  .no-scrollbar::-webkit-scrollbar{display:none}
+  .no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
+  #map{height:28rem}@media(min-width:768px){#map{height:34rem}}
+</style>
 </head>
 <body class="min-h-screen bg-[radial-gradient(ellipse_at_top,_#f6f2ea,_#ece7df)] text-neutral-900">
-  <div id="root"></div>
+<div id="root"></div>
 
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+<!-- React 18 UMD -->
+<script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
 
-  <script type="text/babel">
-    /*************** Chargement des données ***************/
-    const DEFAULT_DATA = {
-      eras: [
-        { id: "all", label: "Tout" },
-        { id: "antiquite", label: "Antiquité" },
-        { id: "moyenage", label: "Moyen Âge" },
-        { id: "modernes", label: "Temps modernes" },
-        { id: "revolution", label: "Révolution & Empire" },
-      ],
-      events: [
-        {
-          id:"ant-1", slug:"voie-romaine", year:"Ier–IVe s.", era:"antiquite",
-          title:"Voie romaine de la Romanche",
-          summary:"Itinéraire antique reliant la cuvette grenobloise au haut Oisans.",
-          tags:["patrimoine","archéo","voie"],
-          group:"Antiquité — itinéraires",
-          order: 10, importance: 3,
-          body:"# Voie romaine\n\nTronçons encore visibles en vallée (photos, sources à ajouter)."
-        },
-        {
-          id:"ma-1", slug:"guigues-alleman", year:"v. 1195–1248", era:"moyenage",
-          title:"Guigues Iᵉʳ Alleman",
-          summary:"Premier seigneur de Séchilienne attesté.",
-          tags:["seigneurs","Alleman"],
-          group:"Moyen Âge — seigneuries",
-          order: 20, importance: 3,
-          body:"# Guigues Iᵉʳ Alleman\n\nPoint de départ de la chronologie seigneuriale locale."
-        },
-        {
-          id:"ma-3", slug:"transport-dauphine-1349", year:"1349", era:"moyenage",
-          title:"Transport du Dauphiné à la France",
-          summary:"Changement de tutelle : effets sur justice et fiscalité.",
-          tags:["contexte","Dauphiné"],
-          group:"Moyen Âge — contexte delphinal",
-          order: 30, importance: 2,
-          body:"# 1349 : Transport du Dauphiné\n\nContexte et impacts à préciser pour Séchilienne."
-        },
-        {
-          id:"tm-2", slug:"maison-du-mottet", year:"XVIIe s.", era:"modernes",
-          title:"Maison du Mottet",
-          summary:"Montée en puissance locale ; toponymie (Croix du Mottet).",
-          tags:["du Mottet","toponymie"],
-          group:"Temps modernes — maisons",
-          order: 50, importance: 2,
-          body:"# Maison du Mottet\n\nRôle et toponymie ; sources à intégrer."
-        },
-        {
-          id:"re-4", slug:"route-napoleon-1815", year:"7 mars 1815", era:"revolution",
-          title:"Route Napoléon (Laffrey, proximité)",
-          summary:"Épisode des Cent-Jours à proximité de Séchilienne.",
-          tags:["Napoléon","Cent-Jours"],
-          group:"Révolution & Empire",
-          order: 90, importance: 1,
-          body:"# 7 mars 1815\n\nRencontre à Laffrey ; encadrer pour l’histoire locale."
-        }
-      ],
-      pois: [
-        { id:"voie", slug:"poi-voie-romaine", name:"Voie romaine (tronçon)", lat:45.055, lng:5.820, kind:"patrimoine", note:"Segment à photographier / sourcer", order: 10, body:"Tronçon probable. À sourcer." },
-        { id:"eglise", slug:"poi-eglise", name:"Église / noyau paroissial", lat:45.048, lng:5.839, kind:"patrimoine", note:"Ancrage médiéval (à préciser)", order: 20, body:"Église et cimetière ancien." },
-        { id:"chat", slug:"poi-chateau", name:"Château de Séchilienne", lat:45.053, lng:5.840, kind:"patrimoine", note:"Existence antérieure (incendie 1944 hors période)", order: 30, body:"Site castral ; iconographie à réunir." },
-      ],
-      families: [
-        { name:"Alleman",  slug:"fam-alleman",  period:"XIIIe–XIVe",  note:"Lignée initiale.", order: 10, body:"Détails, actes et hommages." },
-        { name:"Simiane",  slug:"fam-simiane",  period:"XVIe",        note:"Transmission/alliances.", order: 20, body:"Filiations à préciser." },
-        { name:"du Mottet",slug:"fam-du-mottet",period:"XVIIe–XVIIIe",note:"Toponymie et rôle local.", order: 30, body:"Repères et sources." }
-      ]
-    };
+<script type="text/babel">
+/* ========= Données par défaut (écrasées par data.json si présent) ========= */
+const DEFAULT_DATA = {
+  eras: [
+    { id:"all", label:"Tout" },
+    { id:"antiquite", label:"Antiquité" },
+    { id:"moyenage", label:"Moyen Âge" },
+    { id:"modernes", label:"Temps modernes" },
+    { id:"revolution", label:"Révolution & Empire" },
+    { id:"XXe", label:"XXe siècle" }
+  ],
+  /* événements : section = chrono | guerres | economie | vie */
+  events: [
+    { id:"ant-1", slug:"voie-romaine", section:"chrono", year:"Ier–IVe s.", era:"antiquite",
+      title:"Voie romaine de la Romanche", summary:"Itinéraire antique reliant Grenoble à l’Oisans.",
+      tags:["patrimoine","archéo"], group:"Antiquité — itinéraires", order:10, importance:3,
+      body:"# Voie romaine\n\nTronçons probables en vallée (sources à préciser)." },
+    { id:"ma-1", slug:"guigues-alleman", section:"chrono", year:"v. 1195–1248", era:"moyenage",
+      title:"Guigues Iᵉʳ Alleman", summary:"Premier seigneur attesté de Séchilienne.",
+      tags:["seigneurs"], group:"Moyen Âge — seigneuries", order:20, importance:3,
+      body:"# Guigues Iᵉʳ Alleman\n\nPoint de départ de la chronologie seigneuriale." },
+    { id:"re-4", slug:"route-napoleon-1815", section:"chrono", year:"7 mars 1815", era:"revolution",
+      title:"Route Napoléon (Laffrey, proximité)", summary:"Cent-Jours à proximité de Séchilienne.",
+      tags:["Napoléon"], group:"Révolution & Empire", order:90, importance:2,
+      body:"# 7 mars 1815\n\nRencontre à Laffrey ; impacts régionaux." },
 
-    async function loadData() {
-      try {
-        const res = await fetch('data.json', { cache: 'no-store' });
-        if (!res.ok) throw new Error('no data.json');
-        return await res.json();
-      } catch {
-        return DEFAULT_DATA;
-      }
-    }
+    /* guerres (XXe) */
+    { id:"w-1", slug:"monument-aux-morts", section:"guerres", year:"1920s", era:"XXe",
+      title:"Monument aux morts", summary:"Mémoire 14-18 / 39-45.",
+      tags:["mémoire"], group:"Mémoire communale", order:10, importance:2,
+      body:"# Monument aux morts\n\nNoms, cérémonies, archives municipales." },
 
-    /*************** Utilitaires ***************/
-    function byOrder(a,b){ return (a.order ?? 999) - (b.order ?? 999); }
-    function groupBy(arr, key, fallback="Autres"){
-      return arr.reduce((acc, it) => {
-        const k = (it[key] || fallback);
-        (acc[k] ||= []).push(it);
-        return acc;
-      }, {});
-    }
-    function goTo(hash){ location.hash = hash; }
-    function parseRoute(){
-      const h = location.hash.slice(1);
-      const parts = h.split('/').filter(Boolean);
-      if(parts[0]==='fiche' && parts.length>=3){
-        return { name:'fiche', type:parts[1], slug:parts.slice(2).join('/') };
-      }
-      return { name:'home' };
-    }
+    /* économie & industrialisation */
+    { id:"eco-1", slug:"premiers-moulins", section:"economie", year:"XVIIe–XVIIIe s.", era:"modernes",
+      title:"Moulins et artisanat", summary:"Économie rurale et artisanale.",
+      tags:["économie"], group:"Économie rurale", order:10, importance:1,
+      body:"# Moulins et artisanat\n\nUsages hydrauliques, ateliers, toponymie." }
+  ],
 
-    /*************** Petits composants UI ***************/
-    const Pill = ({ active, children, onClick }) => (
-      <button onClick={onClick} className={`px-3 py-1 rounded-full text-sm transition-all border ${active ? 'bg-black/90 text-white border-black shadow' : 'bg-white/70 backdrop-blur border-black/10 hover:bg-white'}`}>{children}</button>
-    );
-    const Card = ({ children, className='' }) => (
-      <div className={`rounded-2xl border border-black/10 bg-white/80 backdrop-blur shadow-sm ${className}`}>{children}</div>
-    );
-    const SectionTitle = ({ icon, title, subtitle }) => (
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-semibold tracking-tight flex items-center gap-3">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-black/10 bg-white/70">{icon}</span>
-            {title}
-          </h2>
-          {subtitle && <p className="text-sm text-black/60 mt-1">{subtitle}</p>}
+  /* sites (patrimoine) */
+  pois: [
+    { id:"poi-eglise", slug:"eglise", section:"patrimoine", name:"Église & noyau paroissial",
+      lat:45.048, lng:5.839, kind:"patrimoine", note:"Ancrage médiéval (à préciser)", order:10,
+      body:"# Église\n\nHistoire, remaniements, mobilier (sources…)." },
+    { id:"poi-chateau", slug:"chateau", section:"patrimoine", name:"Site castral (château)",
+      lat:45.053, lng:5.840, kind:"patrimoine", note:"Traces et iconographie à réunir", order:20,
+      body:"# Site castral\n\nRepères, seigneuries, destructions." },
+    { id:"poi-voie", slug:"voie-romaine", section:"patrimoine", name:"Voie romaine (tronçon)",
+      lat:45.055, lng:5.820, kind:"patrimoine", note:"Segment probable", order:30,
+      body:"# Voie romaine — repère\n\nCoordonnées, photos sur le terrain." }
+  ],
+
+  /* familles & personnalités */
+  families: [
+    { name:"Alleman", slug:"alleman", section:"personnalites", period:"XIIIe–XIVe",
+      note:"Lignée seigneuriale", order:10, body:"# Famille Alleman\n\nActes, hommages, possessions." },
+    { name:"Simiane", slug:"simiane", section:"personnalites", period:"XVIe",
+      note:"Alliances / transmissions", order:20, body:"# Famille de Simiane\n\nFiliations à préciser." },
+    { name:"du Mottet", slug:"du-mottet", section:"personnalites", period:"XVIIe–XVIIIe",
+      note:"Toponymie (Croix du Mottet)", order:30, body:"# Maison du Mottet\n\nRepères et rôles." }
+  ],
+
+  /* articles = textes thématiques (vie, economie, etc.) */
+  articles: [
+    { id:"vie-ecole", slug:"ecoles-hameaux", section:"vie",
+      title:"Écoles & hameaux", summary:"Organisation scolaire et vie des hameaux.",
+      order:10, body:"# Écoles & hameaux\n\nListes, photos, témoignages…" },
+    { id:"eco-trav", slug:"travaux-industrie", section:"economie",
+      title:"De la meule à l'usine", summary:"Transition vers l’industrialisation.",
+      order:20, body:"# De la meule à l’usine\n\nDates, sites, effets sociaux." }
+  ],
+
+  /* galerie */
+  gallery: [
+    { id:"img-1", src:"https://upload.wikimedia.org/wikipedia/commons/3/3f/Placeholder_view_vector.svg", caption:"Carte postale — centre du bourg (exemple)", credit:"Coll. privée", order:10 },
+    { id:"img-2", src:"https://upload.wikimedia.org/wikipedia/commons/3/3f/Placeholder_view_vector.svg", caption:"Vue générale (exemple)", credit:"Archives", order:20 }
+  ],
+
+  /* ressources (bibliographie / liens) */
+  resources: [
+    { id:"bib-1", label:"Bulletins des Amis de l’Histoire du Pays de Vizille (AHPV)", url:"#", note:"Sélection d’articles" },
+    { id:"bib-2", label:"Archives départementales de l’Isère (ADI)", url:"#", note:"Registres, plans, photos" }
+  ],
+
+  contribute: {
+    email:"mairie@sechilienne.fr",
+    pitch:"Partagez vos souvenirs, photos, documents — l’histoire de Séchilienne s’écrit avec vous !"
+  }
+};
+
+/* ========= Config de navigation (tes rubriques) ========= */
+const NAV = [
+  { id:"chrono", label:"Repères chronologiques", desc:"Frise interactive d’Antiquité à nos jours" },
+  { id:"patrimoine", label:"Patrimoine & sites", desc:"Châteaux, églises, hameaux, ponts, fours, lavoirs…" },
+  { id:"personnalites", label:"Personnalités & familles", desc:"Seigneurs, résistants, figures locales…" },
+  { id:"guerres", label:"Séchilienne pendant les guerres", desc:"Monuments, témoignages, archives, photos" },
+  { id:"vie", label:"Vie quotidienne", desc:"Écoles, métiers, agriculture, fêtes, traditions…" },
+  { id:"economie", label:"De l’économie rurale à l’industrie", desc:"Artisanat, premiers sites industriels, impacts sociaux" },
+  { id:"galerie", label:"Galerie", desc:"Photos, cartes postales, gravures, documents" },
+  { id:"ressources", label:"Ressources", desc:"Bibliographie, liens, publications, bulletins" },
+  { id:"contribuer", label:"Appel à contributions", desc:"Partagez vos souvenirs, photos, documents" }
+];
+
+/* ========= Utils ========= */
+const byOrder = (a,b)=>(a.order??999)-(b.order??999);
+const go = hash => location.hash = hash;
+const parseRoute = () => {
+  const p = location.hash.slice(1).split('/').filter(Boolean);
+  if(!p.length) return {name:"home", section:"chrono"};
+  if(p[0]==="fiche" && p.length>=3) return {name:"fiche", type:p[1], slug:p.slice(2).join('/')};
+  if(p[0]==="section" && p[1]) return {name:"section", section:p[1]};
+  if(p[0]==="galerie") return {name:"galerie"};
+  if(p[0]==="ressources") return {name:"ressources"};
+  if(p[0]==="contribuer") return {name:"contribuer"};
+  return {name:"home", section:"chrono"};
+};
+async function loadData(){
+  try{
+    const r = await fetch("data.json",{cache:"no-store"});
+    if(!r.ok) throw 0; return await r.json();
+  }catch{ return DEFAULT_DATA }
+}
+
+/* ========= Composants UI ========= */
+const Card=({children,className=""})=><div className={`rounded-2xl border border-black/10 bg-white/80 backdrop-blur shadow-sm ${className}`}>{children}</div>;
+const SectionTitle=({title,subtitle,action})=>(
+  <div className="flex items-end justify-between gap-4">
+    <div><h2 className="text-2xl md:text-3xl font-semibold">{title}</h2>
+        {subtitle && <p className="text-sm text-black/60 mt-1">{subtitle}</p>}</div>
+    {action}
+  </div>
+);
+
+/* === Carte Patrimoine === */
+function Carte({pois}){
+  const ref = React.useRef(null);
+  React.useEffect(()=>{
+    const map = L.map(ref.current).setView([45.05,5.84],12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:"&copy; OpenStreetMap"}).addTo(map);
+    const grp={}; const ms=[];
+    [...pois].sort(byOrder).forEach(p=>{
+      const icon = L.divIcon({className:"",html:`<span style="display:inline-block;width:12px;height:12px;border-radius:9999px;background:#1f2937;border:2px solid #fff;box-shadow:0 0 0 2px rgba(0,0,0,.15)"></span>`});
+      const m=L.marker([p.lat,p.lng],{icon}).bindPopup(`<strong>${p.name}</strong><br/><small>${p.kind||"site"}</small><br/>${p.note||""}<br/><a href="#/fiche/poi/${p.slug}">Fiche →</a>`);
+      (grp[p.kind||"site"] ||= L.layerGroup()).addLayer(m); ms.push(m);
+    });
+    Object.values(grp).forEach(g=>g.addTo(map));
+    if(ms.length) map.fitBounds(L.featureGroup(ms).getBounds().pad(0.2));
+    return ()=>map.remove();
+  },[pois]);
+  return <div id="map" ref={ref} className="rounded-2xl border border-black/10 overflow-hidden"></div>;
+}
+
+/* === Frise (repères & filtres par ère) === */
+function Frise({events, eras, eraFilter, onEra}){
+  const data = React.useMemo(()=>events.filter(e=>eraFilter==="all"||e.era===eraFilter).sort(byOrder),[events,eraFilter]);
+  return (
+    <Card className="p-4 md:p-6">
+      <SectionTitle title="Frise chronologique" subtitle="Parcourez les grandes étapes"/>
+      <div className="flex flex-wrap gap-2 mb-4">
+        {eras.map(e=><button key={e.id} onClick={()=>onEra(e.id)} className={`px-3 py-1 rounded-full text-sm border ${eraFilter===e.id?'bg-black text-white':'bg-white'}`}>{e.label}</button>)}
+      </div>
+      <div className="overflow-x-auto no-scrollbar">
+        <div className="flex gap-4 min-w-max pr-4">
+          {data.map(e=>(
+            <button key={e.id} onClick={()=>go(`#/fiche/event/${e.slug}`)} className="w-80 text-left">
+              <div className="rounded-2xl border border-black/10 bg-white/80 p-4 hover:shadow">
+                <div className="text-xs uppercase text-black/60">{e.year}</div>
+                <div className="mt-1 text-lg font-semibold">{e.title}</div>
+                <p className="text-sm text-black/70 mt-2">{e.summary}</p>
+                <div className="mt-2 flex flex-wrap gap-2">{(e.tags||[]).map(t=><span key={t} className="px-2 py-0.5 text-xs rounded-full border">{t}</span>)}</div>
+              </div>
+            </button>
+          ))}
         </div>
       </div>
+    </Card>
+  );
+}
+
+/* === Listes simples par rubrique === */
+const ListItem=({title,subtitle,summary,onClick})=>(
+  <button onClick={onClick} className="text-left w-full rounded-xl border border-black/10 bg-white/80 p-4 hover:shadow">
+    <div className="text-xs uppercase text-black/60">{subtitle}</div>
+    <div className="text-lg font-semibold mt-0.5">{title}</div>
+    {summary && <p className="text-sm text-black/70 mt-2">{summary}</p>}
+  </button>
+);
+
+/* === Fiche (sous-page) === */
+function Fiche({type,slug,data}){
+  let item, title, subtitle;
+  if(type==="event"){ item=data.events.find(x=>x.slug===slug); title=item?.title; subtitle=item?.year; }
+  if(type==="poi"){ item=data.pois.find(x=>x.slug===slug); title=item?.name; subtitle=item?.kind; }
+  if(type==="family"){ item=data.families.find(x=>x.slug===slug); title=item?.name; subtitle=item?.period; }
+  if(!item) return <Card className="p-6">Fiche introuvable. <a href="#/" className="underline">Retour</a></Card>;
+  const html = marked.parse(item.body||"");
+  return (
+    <div className="space-y-4">
+      <Card className="p-6">
+        <div className="flex items-center justify-between">
+          <div><div className="text-xs uppercase text-black/60">{subtitle||""}</div><h1 className="text-2xl md:text-3xl font-semibold">{title}</h1></div>
+          <button onClick={()=>history.back()} className="px-3 py-2 rounded-lg border">← Retour</button>
+        </div>
+        <div className="prose mt-4" dangerouslySetInnerHTML={{__html:html}}></div>
+      </Card>
+    </div>
+  );
+}
+
+/* === Vues par section === */
+function SectionView({id, data}){
+  const [era, setEra] = React.useState("all");
+
+  if(id==="chrono"){
+    const ev = data.events.filter(e=>e.section==="chrono");
+    return <Frise events={ev} eras={data.eras} eraFilter={era} onEra={setEra} />;
+  }
+
+  if(id==="patrimoine"){
+    const pts = data.pois.filter(p=>p.section==="patrimoine").sort(byOrder);
+    return (
+      <>
+        <Card className="p-4 md:p-6"><SectionTitle title="Patrimoine & sites" subtitle="Cliquez un marqueur pour ouvrir la fiche"/></Card>
+        <Carte pois={pts}/>
+        <div className="grid md:grid-cols-2 gap-4 mt-6">
+          {pts.map(p=> <ListItem key={p.slug} title={p.name} subtitle={p.kind||"site"} summary={p.note} onClick={()=>go(`#/fiche/poi/${p.slug}`)}/>)}
+        </div>
+      </>
     );
+  }
 
-    /*************** Carte ***************/
-    function CarteLeaflet({ pois }){
-      const mapRef = React.useRef(null);
-      React.useEffect(() => {
-        const map = L.map(mapRef.current).setView([45.050, 5.840], 12);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{y}/{x}.png'.replace('/{y}/{x}', '/{x}/{y}'), {
-          maxZoom: 19,
-          attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
+  if(id==="personnalites"){
+    const fam = data.families.filter(f=>f.section==="personnalites").sort(byOrder);
+    return (
+      <div className="grid md:grid-cols-3 gap-4">
+        {fam.map(f=> <ListItem key={f.slug} title={f.name} subtitle={f.period} summary={f.note} onClick={()=>go(`#/fiche/family/${f.slug}`)} />)}
+      </div>
+    );
+  }
 
-        const groups = {};
-        const markers = [];
-        [...pois].sort(byOrder).forEach(p => {
-          const color = p.kind === 'patrimoine' ? '#1f2937' : p.kind === 'mémoire' ? '#7c2d12' : '#0f172a';
-          const icon = L.divIcon({
-            className: 'custom-pin',
-            html: `<span style="display:inline-block;width:12px;height:12px;border-radius:9999px;background:${color};border:2px solid #fff;box-shadow:0 0 0 2px rgba(0,0,0,.15)"></span>`,
-            iconSize: [14,14], iconAnchor: [7,7]
-          });
-          const m = L.marker([p.lat, p.lng], { icon })
-            .bindPopup(`<strong>${p.name}</strong><br/><small>${p.kind}</small><br/>${p.note} <br/><a href="#/fiche/poi/${p.slug}">Fiche →</a>`);
-          (groups[p.kind] ||= L.layerGroup()).addLayer(m);
-          markers.push(m);
-        });
-        Object.entries(groups).forEach(([k,g]) => g.addTo(map));
-        L.control.layers({}, groups, { collapsed:false }).addTo(map);
-        if(markers.length){ map.fitBounds(L.featureGroup(markers).getBounds().pad(0.2)); }
-        return () => map.remove();
-      }, [pois]);
+  if(id==="guerres"){
+    const ev = data.events.filter(e=>e.section==="guerres").sort(byOrder);
+    return <div className="grid md:grid-cols-2 gap-4">{ev.map(e=><ListItem key={e.id} title={e.title} subtitle={e.year} summary={e.summary} onClick={()=>go(`#/fiche/event/${e.slug}`)} />)}</div>;
+  }
 
-      return (
-        <Card className="p-4 md:p-6">
-          <SectionTitle icon={<span>🗺️</span>} title="Carte (repères historiques)" subtitle="Cliquez un marqueur puis « Fiche → » pour la sous-page."/>
-          <div id="map" ref={mapRef} className="rounded-2xl border border-black/10 overflow-hidden"></div>
-        </Card>
-      );
-    }
+  if(id==="vie" || id==="economie"){
+    const ev = data.events.filter(e=>e.section===id).sort(byOrder);
+    const art = (data.articles||[]).filter(a=>a.section===id).sort(byOrder);
+    return (
+      <>
+        {art.length>0 && (
+          <Card className="p-4 md:p-6"><SectionTitle title="Articles thématiques" subtitle="Synthèses & dossiers"/></Card>
+        )}
+        <div className="grid md:grid-cols-2 gap-4">
+          {art.map(a=> <ListItem key={a.id} title={a.title} subtitle="Article" summary={a.summary} onClick={()=>go(`#/fiche/event/${a.slug}`)}/>)}
+        </div>
+        {ev.length>0 && (
+          <Card className="p-4 md:p-6 mt-6"><SectionTitle title="Repères associés" subtitle="Événements, périodes, lieux"/></Card>
+        )}
+        <div className="grid md:grid-cols-2 gap-4">
+          {ev.map(e=> <ListItem key={e.id} title={e.title} subtitle={e.year} summary={e.summary} onClick={()=>go(`#/fiche/event/${e.slug}`)} />)}
+        </div>
+      </>
+    );
+  }
 
-    /*************** Frise (groupée + triée) ***************/
-    function Frise({ events, eraFilter }){
-      const filtered = React.useMemo(
-        () => events.filter(e => eraFilter === 'all' || e.era === eraFilter).sort(byOrder),
-        [events, eraFilter]
-      );
-      const groups = React.useMemo(() => groupBy(filtered, 'group'), [filtered]);
-
-      return (
-        <Card className="p-4 md:p-6">
-          <SectionTitle icon={<span>🕰️</span>} title="Frise (fondations → 1815)" subtitle="Regroupée par thèmes, triée par ordre"/>
-          <div className="mt-4 space-y-6">
-            {Object.entries(groups).map(([group, items]) => (
-              <div key={group}>
-                <div className="mb-2 text-xs uppercase tracking-wide text-black/60">{group}</div>
-                <div className="overflow-x-auto no-scrollbar">
-                  <div className="flex gap-4 min-w-max pr-4">
-                    {items.map(e => (
-                      <button
-                        key={e.id}
-                        onClick={()=>goTo(`#/fiche/event/${e.slug}`)}
-                        className={`w-80 shrink-0 transition-transform text-left ${e.importance===3 ? "scale-[1.05]" : e.importance===2 ? "scale-[1.025]" : ""}`}
-                        title="Ouvrir la fiche"
-                      >
-                        <div className="h-full rounded-2xl border border-black/10 bg-gradient-to-b from-white to-white/60 p-4 hover:shadow-md">
-                          <div className="text-xs tracking-wide uppercase text-black/60">{e.year}</div>
-                          <div className="mt-1 text-lg font-semibold">{e.title}</div>
-                          <p className="mt-2 text-sm text-black/70 leading-relaxed">{e.summary}</p>
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            {(e.tags||[]).map(t => (
-                              <span key={t} className="px-2 py-0.5 text-xs rounded-full border border-black/10 bg-white/70">{t}</span>
-                            ))}
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      );
-    }
-
-    /*************** Généalogies ***************/
-    function Genealogies({ families }){
-      const items = React.useMemo(()=>[...families].sort(byOrder), [families]);
-      return (
-        <Card className="p-4 md:p-6">
-          <SectionTitle icon={<span>🌳</span>} title="Maisons seigneuriales" subtitle="Alleman → Simiane → du Mottet (schéma simplifié)."/>
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-            {items.map((f, idx) => (
-              <div key={f.slug} className="relative">
-                {idx < items.length - 1 && <div className="hidden md:block absolute top-10 left-full w-8 h-0.5 bg-black/10"/>}
-                <button onClick={()=>goTo(`#/fiche/family/${f.slug}`)} className="w-full text-left p-4 rounded-2xl border border-black/10 bg-white/70 hover:shadow">
-                  <div className="text-lg font-semibold">{f.name}</div>
-                  <div className="text-xs text-black/60 uppercase tracking-wide">{f.period}</div>
-                  <p className="text-sm text-black/70 mt-2">{f.note}</p>
-                </button>
-              </div>
-            ))}
-          </div>
-          <p className="mt-4 text-xs text-black/60">Cliquez une maison pour ouvrir sa fiche détaillée.</p>
-        </Card>
-      );
-    }
-
-    /*************** Vue Fiche (sous-page) ***************/
-    function Fiche({ type, slug, data }){
-      let item, title, subtitle;
-      if(type==='event'){ item = data.events.find(e=>e.slug===slug); title = item?.title; subtitle = item?.year; }
-      if(type==='poi'){ item = data.pois.find(e=>e.slug===slug); title = item?.name; subtitle = item?.kind; }
-      if(type==='family'){ item = data.families.find(e=>e.slug===slug); title = item?.name; subtitle = item?.period; }
-      if(!item){
-        return (
-          <Card className="p-4 md:p-6">
-            <div className="flex items-center justify-between"><h2 className="text-xl font-semibold">Fiche introuvable</h2><button className="px-3 py-2 rounded-lg border" onClick={()=>goTo('#')}>Retour</button></div>
-            <p className="text-sm text-black/60 mt-2">Vérifiez le slug dans vos données.</p>
+  if(id==="galerie"){
+    const pics = (data.gallery||[]).sort(byOrder);
+    return (
+      <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+        {pics.map(g=>(
+          <Card key={g.id} className="overflow-hidden">
+            <img src={g.src} alt={g.caption||""} className="w-full h-48 object-contain bg-white"/>
+            <div className="p-3">
+              <div className="text-sm">{g.caption||"Sans légende"}</div>
+              {g.credit && <div className="text-xs text-black/60 mt-1">{g.credit}</div>}
+            </div>
           </Card>
-        );
-      }
-      const html = item.body ? marked.parse(item.body) : "<p class='text-black/60'>Aucun contenu détaillé pour l’instant.</p>";
-      return (
-        <div className="space-y-4">
-          <Card className="p-4 md:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xs tracking-wide uppercase text-black/60">{subtitle||""}</div>
-                <h1 className="text-2xl md:text-3xl font-semibold">{title}</h1>
-              </div>
-              <button className="px-3 py-2 rounded-lg border" onClick={()=>history.back()}>← Retour</button>
-            </div>
-            <div className="prose mt-4" dangerouslySetInnerHTML={{__html: html}}></div>
-          </Card>
-          {(type!=='poi') && (
-            <Card className="p-4 md:p-6">
-              <div className="text-sm text-black/60">Astuce : ajoutez **images, sources et cartes** dans le champ *body* en Markdown.</div>
-            </Card>
-          )}
+        ))}
+      </div>
+    );
+  }
+
+  if(id==="ressources"){
+    const rs = (data.resources||[]);
+    return (
+      <Card className="p-4 md:p-6">
+        <ul className="list-disc list-inside space-y-2">
+          {rs.map(r=> <li key={r.id}><a className="underline" href={r.url} target="_blank" rel="noreferrer">{r.label}</a>{r.note? ` — ${r.note}`:""}</li>)}
+        </ul>
+      </Card>
+    );
+  }
+
+  if(id==="contribuer"){
+    const c = data.contribute||{};
+    return (
+      <Card className="p-6">
+        <h2 className="text-2xl font-semibold">Appel à contributions</h2>
+        <p className="text-black/70 mt-2">{c.pitch||"Partagez vos souvenirs, photos, documents."}</p>
+        {c.email && <a className="inline-block mt-4 px-4 py-2 rounded-xl border bg-white hover:bg-black hover:text-white" href={`mailto:${c.email}?subject=S%C3%A9chilienne%20-%20Contribution`}>Écrire à la mairie</a>}
+        <p className="text-xs text-black/60 mt-4">Vous pouvez aussi déposer temporairement vos fichiers à l’accueil municipal pour numérisation.</p>
+      </Card>
+    );
+  }
+
+  return null;
+}
+
+/* === Admin minimal (événements / sites / familles) — activez avec ?admin=1 === */
+function Admin({data,setData}){
+  const [tab,setTab]=React.useState("events");
+  const [idx,setIdx]=React.useState(null);
+  const L=data[tab]; const cur=idx!=null?L[idx]:null;
+  const up=(patch)=>{const c=structuredClone(data); Object.assign(c[tab][idx],patch); setData(c);};
+  const add=(obj)=>{const c=structuredClone(data); c[tab].push(obj); setData(c); setIdx(c[tab].length-1);};
+  const del=()=>{const c=structuredClone(data); c[tab].splice(idx,1); setData(c); setIdx(null);};
+  const exportJSON=()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download="data.json";a.click();};
+  return (
+    <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex">
+      <div className="w-80 bg-white h-full border-r border-black/10 p-3 overflow-y-auto">
+        <div className="flex gap-1 mb-2">
+          {["events","pois","families"].map(t=>(
+            <button key={t} onClick={()=>{setTab(t);setIdx(null);}} className={`px-3 py-2 rounded-lg border ${tab===t?'bg-black text-white':'bg-white'}`}>
+              {t==="events"?"Événements":t==="pois"?"Sites":"Maisons"}
+            </button>
+          ))}
         </div>
-      );
-    }
-
-    /*************** Admin (édition minimale) ***************/
-    function Field({ label, children }){ return <label className="block text-sm mb-2">{label}<div className="mt-1">{children}</div></label>; }
-    function Input(props){ return <input {...props} className={"w-full rounded-lg border border-black/15 px-3 py-2 text-sm bg-white/90 "+(props.className||"")} /> }
-    function Textarea(props){ return <textarea {...props} className={"w-full rounded-lg border border-black/15 px-3 py-2 text-sm bg-white/90 "+(props.className||"")} /> }
-
-    function AdminPanel({data, setData}){
-      const [tab, setTab] = React.useState('events');
-      const [selected, setSelected] = React.useState(null);
-
-      function update(collection, index, patch){
-        const clone = structuredClone(data);
-        Object.assign(clone[collection][index], patch);
-        setData(clone);
-      }
-      function add(collection, obj){
-        const clone = structuredClone(data);
-        clone[collection].push(obj);
-        setData(clone);
-        setSelected(clone[collection].length-1);
-      }
-      function remove(collection, index){
-        const clone = structuredClone(data);
-        clone[collection].splice(index,1);
-        setData(clone);
-        setSelected(null);
-      }
-      function exportJSON(){
-        const blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = "data.json";
-        a.click();
-      }
-
-      const list = data[tab];
-      const cur = selected!=null ? list[selected] : null;
-
-      return (
-        <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex">
-          <div className="w-80 bg-white h-full border-r border-black/10 p-3 overflow-y-auto">
-            <div className="flex gap-1 mb-2">
-              {["events","pois","families"].map(t=>(
-                <button key={t} onClick={()=>{setTab(t);setSelected(null);}} className={"px-3 py-2 rounded-lg border "+(tab===t?"bg-black text-white border-black":"bg-white border-black/10")}>
-                  {t==="events"?"Frise":t==="pois"?"Carte":"Maisons"}
-                </button>
-              ))}
-            </div>
-            <div className="text-xs text-black/60 mb-2">Sélectionnez un élément pour l’éditer.</div>
-            <div className="space-y-1">
-              {list.map((it, i)=>(
-                <button key={i} onClick={()=>setSelected(i)} className={"w-full text-left px-3 py-2 rounded-lg border "+(selected===i?"bg-black text-white border-black":"bg-white border-black/10 hover:bg-black/5")}>
-                  <div className="text-sm font-medium truncate">{it.title||it.name}</div>
-                  <div className="text-xs opacity-70 truncate">{it.year||it.kind||it.period}</div>
-                </button>
-              ))}
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              {tab==="events" && <button className="px-3 py-2 rounded-lg border" onClick={()=>add("events",{id:"new-"+Date.now(),slug:"",year:"",era:"moyenage",title:"",summary:"",tags:[],group:"",order:999,importance:1,body:""})}>+ Événement</button>}
-              {tab==="pois" && <button className="px-3 py-2 rounded-lg border" onClick={()=>add("pois",{id:"p-"+Date.now(),slug:"",name:"",lat:45,lng:5.8,kind:"patrimoine",note:"",order:999,body:""})}>+ Lieu</button>}
-              {tab==="families" && <button className="px-3 py-2 rounded-lg border" onClick={()=>add("families",{name:"",slug:"",period:"",note:"",order:999,body:""})}>+ Maison</button>}
-              {selected!=null && <button className="px-3 py-2 rounded-lg border" onClick={()=>remove(tab,selected)}>🗑 Supprimer</button>}
-            </div>
-            <div className="mt-4">
-              <button className="px-3 py-2 rounded-lg border w-full" onClick={exportJSON}>⬇️ Exporter data.json</button>
-            </div>
-            <div className="mt-3 text-[11px] text-black/60">Publiez <code>data.json</code> à la racine du dépôt pour alimenter le site.</div>
-            <div className="mt-6 text-[11px] text-black/50">Champs clés : <code>group</code>, <code>order</code>, <code>importance</code>, <code>slug</code>, <code>body</code>.</div>
+        <div className="text-xs text-black/60 mb-2">Sélectionnez un élément</div>
+        <div className="space-y-1">
+          {L.map((it,i)=>(
+            <button key={i} onClick={()=>setIdx(i)} className={`w-full text-left px-3 py-2 rounded-lg border ${idx===i?'bg-black text-white':'bg-white'}`}>
+              <div className="text-sm font-medium truncate">{it.title||it.name}</div>
+              <div className="text-xs opacity-70 truncate">{it.year||it.kind||it.period}</div>
+            </button>
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-2 mt-3">
+          {tab==="events" && <button className="px-3 py-2 rounded-lg border" onClick={()=>add({id:"e-"+Date.now(),slug:"",section:"chrono",year:"",era:"XXe",title:"",summary:"",tags:[],group:"",order:999,importance:1,body:""})}>+ Événement</button>}
+          {tab==="pois" && <button className="px-3 py-2 rounded-lg border" onClick={()=>add({id:"p-"+Date.now(),slug:"",section:"patrimoine",name:"",lat:45,lng:5.8,kind:"patrimoine",note:"",order:999,body:""})}>+ Site</button>}
+          {tab==="families" && <button className="px-3 py-2 rounded-lg border" onClick={()=>add({name:"",slug:"",section:"personnalites",period:"",note:"",order:999,body:""})}>+ Maison</button>}
+          {idx!=null && <button className="px-3 py-2 rounded-lg border" onClick={del}>🗑 Supprimer</button>}
+        </div>
+        <div className="mt-4"><button className="px-3 py-2 rounded-lg border w-full" onClick={exportJSON}>⬇️ Exporter data.json</button></div>
+        <div className="text-[11px] text-black/60 mt-3">Les autres rubriques (articles, galerie, ressources) s’éditent en modifiant <code>data.json</code>.</div>
+      </div>
+      <div className="flex-1 bg-white p-4 overflow-y-auto">
+        <div className="flex justify-between items-center">
+          <div className="font-semibold">Édition — {tab}</div>
+          <button className="px-3 py-2 rounded-lg border" onClick={()=>document.dispatchEvent(new CustomEvent('close-admin'))}>Fermer</button>
+        </div>
+        {!cur && <div className="text-sm text-black/60 mt-4">Sélectionnez un élément à gauche.</div>}
+        {cur && tab==="events" && (
+          <div className="grid md:grid-cols-2 gap-4 mt-4">
+            <label className="text-sm">Slug<input className="w-full border rounded-lg px-3 py-2" value={cur.slug||""} onChange={e=>up({slug:e.target.value})}/></label>
+            <label className="text-sm">Section (chrono/guerres/economie/vie)<input className="w-full border rounded-lg px-3 py-2" value={cur.section||"chrono"} onChange={e=>up({section:e.target.value})}/></label>
+            <label className="text-sm">Année/période<input className="w-full border rounded-lg px-3 py-2" value={cur.year||""} onChange={e=>up({year:e.target.value})}/></label>
+            <label className="text-sm">Ère (antiquite/moyenage/modernes/révolution/XXe)<input className="w-full border rounded-lg px-3 py-2" value={cur.era||""} onChange={e=>up({era:e.target.value})}/></label>
+            <label className="text-sm md:col-span-2">Titre<input className="w-full border rounded-lg px-3 py-2" value={cur.title||""} onChange={e=>up({title:e.target.value})}/></label>
+            <label className="text-sm md:col-span-2">Résumé<textarea className="w-full border rounded-lg px-3 py-2" rows="3" value={cur.summary||""} onChange={e=>up({summary:e.target.value})}></textarea></label>
+            <label className="text-sm">Groupe<input className="w-full border rounded-lg px-3 py-2" value={cur.group||""} onChange={e=>up({group:e.target.value})}/></label>
+            <label className="text-sm">Ordre<input type="number" className="w-full border rounded-lg px-3 py-2" value={cur.order??999} onChange={e=>up({order:parseInt(e.target.value,10)})}/></label>
+            <label className="text-sm">Importance (1-3)<input type="number" min="1" max="3" className="w-full border rounded-lg px-3 py-2" value={cur.importance??1} onChange={e=>up({importance:parseInt(e.target.value,10)})}/></label>
+            <label className="text-sm md:col-span-2">Corps (Markdown)<textarea className="w-full border rounded-lg px-3 py-2" rows="8" value={cur.body||""} onChange={e=>up({body:e.target.value})}></textarea></label>
           </div>
-          <div className="flex-1 bg-white h-full p-4 overflow-y-auto">
-            <div className="flex justify-between items-center">
-              <div className="font-semibold">Édition {tab==='events'?'— Frise':tab==='pois'?'— Carte':'— Maisons'}</div>
-              <button className="px-3 py-2 rounded-lg border" onClick={()=>document.dispatchEvent(new CustomEvent('close-admin'))}>Fermer</button>
-            </div>
-            {!cur && <div className="text-sm text-black/60 mt-4">Sélectionnez un élément à gauche.</div>}
-            {cur && tab==="events" && (
-              <div className="mt-4 grid md:grid-cols-2 gap-4">
-                <Field label="ID"><Input value={cur.id} onChange={e=>update('events',selected,{id:e.target.value})}/></Field>
-                <Field label="Slug (url-friendly)"><Input value={cur.slug||""} onChange={e=>update('events',selected,{slug:e.target.value})}/></Field>
-                <Field label="Année / période"><Input value={cur.year||""} onChange={e=>update('events',selected,{year:e.target.value})}/></Field>
-                <Field label="Époque (antiquite, moyenage, modernes, revolution)"><Input value={cur.era||""} onChange={e=>update('events',selected,{era:e.target.value})}/></Field>
-                <Field label="Titre"><Input value={cur.title||""} onChange={e=>update('events',selected,{title:e.target.value})}/></Field>
-                <Field label="Résumé"><Textarea rows="4" value={cur.summary||""} onChange={e=>update('events',selected,{summary:e.target.value})}/></Field>
-                <Field label="Tags (séparés par des virgules)"><Input value={(cur.tags||[]).join(', ')} onChange={e=>update('events',selected,{tags:e.target.value.split(',').map(s=>s.trim()).filter(Boolean)})}/></Field>
-                <Field label="Groupe"><Input value={cur.group||""} onChange={e=>update('events',selected,{group:e.target.value})}/></Field>
-                <Field label="Ordre (nombre)"><Input type="number" value={cur.order??999} onChange={e=>update('events',selected,{order:parseInt(e.target.value,10)})}/></Field>
-                <Field label="Importance (1-3)"><Input type="number" min="1" max="3" value={cur.importance??1} onChange={e=>update('events',selected,{importance:parseInt(e.target.value,10)})}/></Field>
-                <div className="md:col-span-2">
-                  <Field label="Contenu (Markdown)"><Textarea rows="8" value={cur.body||""} onChange={e=>update('events',selected,{body:e.target.value})}/></Field>
-                </div>
-              </div>
-            )}
-            {cur && tab==="pois" && (
-              <div className="mt-4 grid md:grid-cols-2 gap-4">
-                <Field label="ID"><Input value={cur.id} onChange={e=>update('pois',selected,{id:e.target.value})}/></Field>
-                <Field label="Slug"><Input value={cur.slug||""} onChange={e=>update('pois',selected,{slug:e.target.value})}/></Field>
-                <Field label="Nom"><Input value={cur.name||""} onChange={e=>update('pois',selected,{name:e.target.value})}/></Field>
-                <Field label="Latitude"><Input type="number" step="0.000001" value={cur.lat} onChange={e=>update('pois',selected,{lat:parseFloat(e.target.value)})}/></Field>
-                <Field label="Longitude"><Input type="number" step="0.000001" value={cur.lng} onChange={e=>update('pois',selected,{lng:parseFloat(e.target.value)})}/></Field>
-                <Field label="Catégorie"><Input value={cur.kind||""} onChange={e=>update('pois',selected,{kind:e.target.value})}/></Field>
-                <Field label="Ordre"><Input type="number" value={cur.order??999} onChange={e=>update('pois',selected,{order:parseInt(e.target.value,10)})}/></Field>
-                <div className="md:col-span-2">
-                  <Field label="Note"><Textarea rows="3" value={cur.note||""} onChange={e=>update('pois',selected,{note:e.target.value})}/></Field>
-                  <Field label="Contenu (Markdown)"><Textarea rows="6" value={cur.body||""} onChange={e=>update('pois',selected,{body:e.target.value})}/></Field>
-                </div>
-              </div>
-            )}
-            {cur && tab==="families" && (
-              <div className="mt-4 grid md:grid-cols-2 gap-4">
-                <Field label="Nom"><Input value={cur.name||""} onChange={e=>update('families',selected,{name:e.target.value})}/></Field>
-                <Field label="Slug"><Input value={cur.slug||""} onChange={e=>update('families',selected,{slug:e.target.value})}/></Field>
-                <Field label="Période"><Input value={cur.period||""} onChange={e=>update('families',selected,{period:e.target.value})}/></Field>
-                <Field label="Ordre"><Input type="number" value={cur.order??999} onChange={e=>update('families',selected,{order:parseInt(e.target.value,10)})}/></Field>
-                <div className="md:col-span-2">
-                  <Field label="Note"><Textarea rows="3" value={cur.note||""} onChange={e=>update('families',selected,{note:e.target.value})}/></Field>
-                  <Field label="Contenu (Markdown)"><Textarea rows="6" value={cur.body||""} onChange={e=>update('families',selected,{body:e.target.value})}/></Field>
-                </div>
-              </div>
-            )}
+        )}
+        {cur && tab==="pois" && (
+          <div className="grid md:grid-cols-2 gap-4 mt-4">
+            <label className="text-sm">Slug<input className="w-full border rounded-lg px-3 py-2" value={cur.slug||""} onChange={e=>up({slug:e.target.value})}/></label>
+            <label className="text-sm">Section (patrimoine)<input className="w-full border rounded-lg px-3 py-2" value={cur.section||"patrimoine"} onChange={e=>up({section:e.target.value})}/></label>
+            <label className="text-sm">Nom<input className="w-full border rounded-lg px-3 py-2" value={cur.name||""} onChange={e=>up({name:e.target.value})}/></label>
+            <label className="text-sm">Latitude<input type="number" step="0.000001" className="w-full border rounded-lg px-3 py-2" value={cur.lat} onChange={e=>up({lat:parseFloat(e.target.value)})}/></label>
+            <label className="text-sm">Longitude<input type="number" step="0.000001" className="w-full border rounded-lg px-3 py-2" value={cur.lng} onChange={e=>up({lng:parseFloat(e.target.value)})}/></label>
+            <label className="text-sm">Catégorie<input className="w-full border rounded-lg px-3 py-2" value={cur.kind||""} onChange={e=>up({kind:e.target.value})}/></label>
+            <label className="text-sm">Ordre<input type="number" className="w-full border rounded-lg px-3 py-2" value={cur.order??999} onChange={e=>up({order:parseInt(e.target.value,10)})}/></label>
+            <label className="text-sm md:col-span-2">Note<textarea className="w-full border rounded-lg px-3 py-2" rows="3" value={cur.note||""} onChange={e=>up({note:e.target.value})}></textarea></label>
+            <label className="text-sm md:col-span-2">Corps (Markdown)<textarea className="w-full border rounded-lg px-3 py-2" rows="6" value={cur.body||""} onChange={e=>up({body:e.target.value})}></textarea></label>
           </div>
+        )}
+        {cur && tab==="families" && (
+          <div className="grid md:grid-cols-2 gap-4 mt-4">
+            <label className="text-sm">Slug<input className="w-full border rounded-lg px-3 py-2" value={cur.slug||""} onChange={e=>up({slug:e.target.value})}/></label>
+            <label className="text-sm">Section (personnalites)<input className="w-full border rounded-lg px-3 py-2" value={cur.section||"personnalites"} onChange={e=>up({section:e.target.value})}/></label>
+            <label className="text-sm">Nom<input className="w-full border rounded-lg px-3 py-2" value={cur.name||""} onChange={e=>up({name:e.target.value})}/></label>
+            <label className="text-sm">Période<input className="w-full border rounded-lg px-3 py-2" value={cur.period||""} onChange={e=>up({period:e.target.value})}/></label>
+            <label className="text-sm">Ordre<input type="number" className="w-full border rounded-lg px-3 py-2" value={cur.order??999} onChange={e=>up({order:parseInt(e.target.value,10)})}/></label>
+            <label className="text-sm md:col-span-2">Note<textarea className="w-full border rounded-lg px-3 py-2" rows="3" value={cur.note||""} onChange={e=>up({note:e.target.value})}></textarea></label>
+            <label className="text-sm md:col-span-2">Corps (Markdown)<textarea className="w-full border rounded-lg px-3 py-2" rows="6" value={cur.body||""} onChange={e=>up({body:e.target.value})}></textarea></label>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* === App & Router === */
+function App(){
+  const [data,setData]=React.useState(DEFAULT_DATA);
+  const [route,setRoute]=React.useState(parseRoute());
+  const isAdmin = new URLSearchParams(location.search).get("admin")==="1";
+
+  React.useEffect(()=>{ loadData().then(setData); },[]);
+  React.useEffect(()=>{ const on=()=>setRoute(parseRoute()); addEventListener("hashchange",on); return ()=>removeEventListener("hashchange",on); },[]);
+  React.useEffect(()=>{ const close=()=>document.getElementById("admin").remove(); document.addEventListener("close-admin",close); return ()=>document.removeEventListener("close-admin",close); },[]);
+
+  const section = route.section || "chrono";
+  const navItems = NAV;
+
+  return (
+    <div>
+      <header className="sticky top-0 z-30 border-b border-black/10 bg-[rgba(255,255,255,0.65)] backdrop-blur">
+        <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-3">
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold">Séchilienne — Histoire & Patrimoines</h1>
+            <p className="text-xs md:text-sm text-black/60">Exploration interactive du passé local</p>
+          </div>
+          <nav className="hidden md:flex items-center gap-1">
+            {navItems.map(n=>(
+              <button key={n.id} onClick={()=>go(n.id==="galerie"||n.id==="ressources"||n.id==="contribuer" ? `#/${n.id}` : `#/section/${n.id}`)}
+                className={`px-3 py-2 rounded-xl text-sm border ${ (section===n.id || (route.name===n.id) ) ? 'bg-black text-white border-black' : 'bg-white/70 border-black/10 hover:bg-white'}`}>
+                {n.label}
+              </button>
+            ))}
+            {isAdmin && <button className="px-3 py-2 rounded-xl text-sm border" onClick={()=>document.getElementById("admin")?.classList.remove("hidden")}>✏️ Modifier</button>}
+          </nav>
         </div>
-      );
-    }
+        <div className="md:hidden px-4 pb-2 flex gap-2 overflow-x-auto no-scrollbar">
+          {navItems.map(n=>(
+            <button key={n.id} onClick={()=>go(n.id==="galerie"||n.id==="ressources"||n.id==="contribuer" ? `#/${n.id}` : `#/section/${n.id}`)} className="px-3 py-2 rounded-xl text-sm border bg-white/80">{n.label}</button>
+          ))}
+          {isAdmin && <button className="px-3 py-2 rounded-xl text-sm border" onClick={()=>document.getElementById("admin")?.classList.remove("hidden")}>✏️</button>}
+        </div>
+      </header>
 
-    /*************** App + Router ***************/
-    function App(){
-      const [data, setData] = React.useState(DEFAULT_DATA);
-      const [tab, setTab] = React.useState('carte');
-      const [era, setEra] = React.useState('all');
-      const [route, setRoute] = React.useState(parseRoute());
-      const [adminOpen, setAdminOpen] = React.useState(false);
-      const isAdmin = new URLSearchParams(location.search).get('admin') === '1';
-
-      React.useEffect(()=>{ loadData().then(setData); }, []);
-      React.useEffect(()=>{
-        const onHash = ()=> setRoute(parseRoute());
-        window.addEventListener('hashchange', onHash);
-        return ()=>window.removeEventListener('hashchange', onHash);
-      }, []);
-      React.useEffect(()=>{
-        const close = ()=>setAdminOpen(false);
-        document.addEventListener('close-admin', close);
-        return ()=>document.removeEventListener('close-admin', close);
-      },[]);
-
-      return (
-        <div>
-          <header className="sticky top-0 z-30 backdrop-blur bg-[rgba(255,255,255,0.65)] border-b border-black/10">
-            <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-4">
-              <div>
-                <h1 className="text-xl md:text-2xl font-bold tracking-tight">Séchilienne — Histoire vivante</h1>
-                <p className="text-xs md:text-sm text-black/60">Carte • Frise • Maisons • Fiches</p>
-              </div>
-              <nav className="flex items-center gap-1">
-                {route.name==='home' && ([
-                  { id:'carte', label:'Carte' },
-                  { id:'frise', label:'Frise' },
-                  { id:'genea', label:'Maisons' },
-                ]).map(t => (
-                  <button key={t.id} className={`px-3 py-2 rounded-xl text-sm border transition ${tab===t.id ? 'bg-black text-white border-black shadow' : 'bg-white/70 border-black/10 hover:bg-white'}`} onClick={() => setTab(t.id)}>{t.label}</button>
-                ))}
-                {isAdmin && <button className="px-3 py-2 rounded-xl text-sm border" onClick={()=>setAdminOpen(true)}>✏️ Modifier</button>}
-              </nav>
-            </div>
-          </header>
-
-          <main className="mx-auto max-w-6xl px-4 py-6 space-y-6">
-            {route.name==='home' ? (
-              <>
-                <Card className="p-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm text-black/60 mr-1">Filtrer la période :</span>
-                    {data.eras.map(e => <Pill key={e.id} active={era===e.id} onClick={() => setEra(e.id)}>{e.label}</Pill>)}
-                  </div>
-                </Card>
-
-                {tab==='carte' && <CarteLeaflet pois={data.pois}/>}
-                {tab==='frise' && <Frise events={data.events} eraFilter={era}/>}
-                {tab==='genea' && <Genealogies families={data.families}/>}
-              </>
-            ) : (
-              <Fiche type={route.type} slug={route.slug} data={data}/>
-            )}
-
+      <main className="mx-auto max-w-6xl px-4 py-6 space-y-6">
+        {route.name==="fiche" ? (
+          <Fiche type={route.type} slug={route.slug} data={data}/>
+        ) : route.name==="galerie" ? (
+          <>
+            <Card className="p-4 md:p-6"><SectionTitle title="Galerie d’images & documents" subtitle="Photos, cartes postales, gravures"/></Card>
+            <SectionView id="galerie" data={data}/>
+          </>
+        ) : route.name==="ressources" ? (
+          <>
+            <Card className="p-4 md:p-6"><SectionTitle title="Ressources & approfondissements" subtitle="Bibliographie, liens, publications"/></Card>
+            <SectionView id="ressources" data={data}/>
+          </>
+        ) : route.name==="contribuer" ? (
+          <>
+            <Card className="p-4 md:p-6"><SectionTitle title="Appel à contributions" subtitle="Partagez vos souvenirs, photos, documents"/></Card>
+            <SectionView id="contribuer" data={data}/>
+          </>
+        ) : (
+          <>
             <Card className="p-4 md:p-6">
-              <SectionTitle icon={<span>🧭</span>} title="Méthodologie & sources (à intégrer)" subtitle="Compléter avant publication définitive"/>
-              <ul className="mt-4 grid md:grid-cols-3 gap-3 text-sm text-black/80 list-disc list-inside">
-                <li>Inventaire des tronçons de <strong>voie romaine</strong> (photos, coords, bibliographie).</li>
-                <li><strong>Chartes et hommages</strong> pour Alleman → Simiane → du Mottet.</li>
-                <li>Contexte du <strong>Transport du Dauphiné (1349)</strong> avec impacts locaux.</li>
-                <li>Dossiers <strong>Lesdiguières</strong> (Vizille) et interactions avec Séchilienne.</li>
-                <li>Archives communales : 1789–1793 (<strong>biens nationaux</strong>, délibérations).</li>
-                <li>Encadré <strong>7 mars 1815</strong> : Route Napoléon (Laffrey) et perception locale.</li>
-              </ul>
-              <div className="mt-4 text-xs text-black/60">Les champs <code>slug</code>, <code>group</code>, <code>order</code>, <code>importance</code> et <code>body</code> pilotent hiérarchie et sous-pages.</div>
+              <SectionTitle title={NAV.find(n=>n.id===section)?.label || "Section"} subtitle={NAV.find(n=>n.id===section)?.desc}/>
             </Card>
-          </main>
+            <SectionView id={section} data={data}/>
+          </>
+        )}
 
-          <footer className="mx-auto max-w-6xl px-4 pb-10 text-xs text-black/50">Gabarit © 2025 — Commune de Séchilienne / AHPV — Données via data.json — React UMD + Leaflet + Tailwind — Sous-pages par hash.</footer>
+        <Card className="p-4 md:p-6">
+          <SectionTitle title="Méthodologie & sources" subtitle="À compléter avant publication"/>
+          <ul className="mt-3 list-disc list-inside text-sm text-black/80 space-y-1">
+            <li>Vérifier les dates & toponymes (ADI, AHPV, bibliographie locale).</li>
+            <li>Illustrer (galerie) : crédits, légendes, provenance.</li>
+            <li>Structurer les jalons par <code>group</code> & <code>order</code> ; détailler via <code>body</code> (Markdown).</li>
+          </ul>
+        </Card>
+      </main>
 
-          {adminOpen && <AdminPanel data={data} setData={setData} />}
+      <footer className="mx-auto max-w-6xl px-4 pb-10 text-xs text-black/60">© Commune de Séchilienne — Gabarit statique (React UMD + Tailwind + Leaflet). Données : <code>data.json</code>. Sous-pages par hash.</footer>
+
+      {/* panneau admin caché (ouvrir via bouton ✏️ en haut, avec ?admin=1 dans l’URL) */}
+      {isAdmin && (
+        <div id="admin" className="hidden fixed inset-0">
+          <Admin data={data} setData={setData}/>
         </div>
-      );
-    }
+      )}
+    </div>
+  );
+}
 
-    /*************** Bootstrap ***************/
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App/>);
-  </script>
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
 </body>
 </html>
