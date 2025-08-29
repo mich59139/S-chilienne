@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Séchilienne — Des fondations à 1815 (pré-rempli)</title>
+  <title>Séchilienne — Des fondations à 1815 (données externalisées)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -14,103 +14,98 @@
     @media (min-width: 768px){ #map { height: 32rem; } }
     .leaflet-control-layers-expanded { max-height: 220px; overflow:auto; }
     .prose p{ margin: .4rem 0; }
+    .btn { @apply px-3 py-2 rounded-xl text-sm border transition; }
+    .btn-primary { @apply bg-black text-white border-black shadow; }
+    .btn-ghost { @apply bg-white/70 border-black/10 hover:bg-white; }
   </style>
 </head>
 <body class="min-h-screen bg-[radial-gradient(ellipse_at_top,_#f6f2ea,_#ece7df)] text-neutral-900">
   <div id="root"></div>
 
+  <!-- React 18 UMD -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
 
   <script type="text/babel">
-    // ---------------- Données (fondations → 1815) ----------------
-    const ERAS = [
-      { id: "all", label: "Tout" },
-      { id: "antiquite", label: "Antiquité" },
-      { id: "moyenage", label: "Moyen Âge" },
-      { id: "modernes", label: "Temps modernes" },
-      { id: "revolution", label: "Révolution & Empire" },
-    ];
+    /*************** Chargement des données ***************/
+    const DEFAULT_DATA = {
+      eras: [
+        { id: "all", label: "Tout" },
+        { id: "antiquite", label: "Antiquité" },
+        { id: "moyenage", label: "Moyen Âge" },
+        { id: "modernes", label: "Temps modernes" },
+        { id: "revolution", label: "Révolution & Empire" },
+      ],
+      events: [
+        { id:"ant-1", year:"Ier–IVe s.", era:"antiquite", title:"Voie romaine de la Romanche",
+          summary:"Itinéraire antique reliant la cuvette grenobloise au haut Oisans. Tronçons visibles (à sourcer).",
+          tags:["patrimoine","archéo","voie"] },
+        { id:"ma-0", year:"XIIe–XIIIe s.", era:"moyenage", title:"Structuration paroissiale & châtellenies",
+          summary:"Autour de l'église et des hameaux ; seigneurie locale qui s'affirme.",
+          tags:["paroisse","fiefs"] },
+        { id:"ma-1", year:"v. 1195–1248", era:"moyenage", title:"Guigues Iᵉʳ Alleman",
+          summary:"Premier seigneur de Séchilienne attesté.",
+          tags:["seigneurs","Alleman"] },
+        { id:"ma-2", year:"XIIIe–XIVe s.", era:"moyenage", title:"Maisons et alliances (Alleman)",
+          summary:"Alliances, hommages et partages façonnent le pouvoir local.",
+          tags:["généalogie","Alleman"] },
+        { id:"ma-3", year:"1349", era:"moyenage", title:"Transport du Dauphiné à la France",
+          summary:"Effets progressifs sur justice, fiscalité et administration.",
+          tags:["contexte","Dauphiné"] },
+        { id:"tm-1", year:"XVIe s.", era:"modernes", title:"Transmission Alleman → Simiane",
+          summary:"Héritages et alliances (à sourcer par actes).",
+          tags:["Simiane","transmission"] },
+        { id:"tm-2", year:"XVIIe s.", era:"modernes", title:"Maison du Mottet",
+          summary:"Montée en puissance locale ; toponymie (Croix du Mottet).",
+          tags:["du Mottet","toponymie"] },
+        { id:"tm-3", year:"v. 1590–1620", era:"modernes", title:"Lesdiguières et équilibres locaux",
+          summary:"Poids de Vizille ; marges d'autonomie de Séchilienne (à documenter).",
+          tags:["Lesdiguières","Vizille"] },
+        { id:"re-1", year:"1789", era:"revolution", title:"4 août : fin des droits féodaux",
+          summary:"Abolition des redevances ; effets locaux à préciser.",
+          tags:["Révolution","droits"] },
+        { id:"re-2", year:"1790", era:"revolution", title:"Création de la commune (Isère)",
+          summary:"Naissance de la municipalité moderne ; état civil.",
+          tags:["commune","Isère"] },
+        { id:"re-3", year:"1791–1793", era:"revolution", title:"Biens nationaux",
+          summary:"Ventes et recomposition foncière (ADI).",
+          tags:["biens nationaux"] },
+        { id:"re-4", year:"7 mars 1815", era:"revolution", title:"Route Napoléon (proximité Laffrey)",
+          summary:"Contexte régional des Cent-Jours, près de Séchilienne.",
+          tags:["Napoléon","Cent-Jours"] },
+      ],
+      pois: [
+        { id:"voie",   name:"Voie romaine (tronçon)",    lat:45.055, lng:5.820, kind:"patrimoine", note:"Segment à photographier / sourcer" },
+        { id:"eglise", name:"Église / noyau paroissial", lat:45.048, lng:5.839, kind:"patrimoine", note:"Ancrage médiéval (à préciser)" },
+        { id:"chat",   name:"Château de Séchilienne",    lat:45.053, lng:5.840, kind:"patrimoine", note:"Existence antérieure (incendie 1944 hors période)" },
+        { id:"mottet", name:"Croix du Mottet",           lat:45.045, lng:5.850, kind:"mémoire",    note:"Toponyme lié à la maison du Mottet" },
+        { id:"viz",    name:"Laffrey (route Napoléon)",  lat:45.036, lng:5.795, kind:"contexte",   note:"7 mars 1815, rencontre" },
+      ],
+      families: [
+        { name:"Alleman",  period:"XIIIe–XIVe",  note:"Lignée initiale (hommages, partages à sourcer)." },
+        { name:"Simiane",  period:"XVIe",        note:"Transmission par alliances (filiations à préciser)." },
+        { name:"du Mottet",period:"XVIIe–XVIIIe",note:"Toponymie (Croix du Mottet) ; rôle local à éclairer." },
+      ]
+    };
 
-    const EVENTS = [
-      // Antiquité (voies & premiers peuplements attestables régionalement)
-      { id:"ant-1", year:"Ier–IVe s.", era:"antiquite", title:"Voie romaine de la Romanche",
-        summary:"Itinéraire antique reliant la cuvette grenobloise au haut Oisans. Des tronçons sont encore visibles en vallée (à sourcer et illustrer).",
-        tags:["patrimoine","archéo","voie"] },
+    async function loadData() {
+      try {
+        const res = await fetch('data.json', { cache: 'no-store' });
+        if (!res.ok) throw new Error('no data.json');
+        return await res.json();
+      } catch {
+        return DEFAULT_DATA;
+      }
+    }
 
-      // Moyen Âge : seigneuries locales + contexte delphinal
-      { id:"ma-0", year:"XIIe–XIIIe s.", era:"moyenage", title:"Structuration paroissiale & châtellenies",
-        summary:"Autour de l'église et des hameaux, la communauté se fixe ; la seigneurie locale s'affirme (à documenter par chartes).",
-        tags:["paroisse","fiefs"] },
-
-      { id:"ma-1", year:"v. 1195–1248", era:"moyenage", title:"Guigues Iᵉʳ Alleman",
-        summary:"Premier seigneur de Séchilienne attesté. Point de départ de la chronologie seigneuriale locale.",
-        tags:["seigneurs","Alleman"] },
-
-      { id:"ma-2", year:"XIIIe–XIVe s.", era:"moyenage", title:"Maisons et alliances (Alleman)",
-        summary:"Alliances, hommages et partages façonnent le pouvoir local. (Lignes à préciser : dots, co-seigneuries, possessions).",
-        tags:["généalogie","Alleman"] },
-
-      { id:"ma-3", year:"1349", era:"moyenage", title:"Transport du Dauphiné à la France",
-        summary:"Le Dauphiné passe sous l'autorité du roi de France. Effets progressifs sur la justice, la fiscalité et l'encadrement administratif.",
-        tags:["contexte","Dauphiné"] },
-
-      // Temps modernes : bascule des maisons, pression des grands voisins, Lesdiguières
-      { id:"tm-1", year:"XVIe s.", era:"modernes", title:"Transmission Alleman → Simiane",
-        summary:"Par héritages et alliances, des droits passent aux Simiane (à sourcer par actes notariés et hommages).",
-        tags:["Simiane","transmission"] },
-
-      { id:"tm-2", year:"XVIIe s.", era:"modernes", title:"Maison du Mottet",
-        summary:"Montée en puissance locale ; toponymie (Croix du Mottet) et gestion des terroirs (à préciser).",
-        tags:["du Mottet","toponymie"] },
-
-      { id:"tm-3", year:"v. 1590–1620", era:"modernes", title:"Lesdiguières et les équilibres locaux",
-        summary:"Le connétable de Lesdiguières, puissant à Vizille, pèse sur la zone. Séchilienne affirme ses marges d'autonomie dans ce contexte (à vérifier).",
-        tags:["Lesdiguières","Vizille"] },
-
-      // Révolution & Empire : cadre communal et réformes
-      { id:"re-1", year:"1789", era:"revolution", title:"Nuit du 4 août : fin des droits féodaux",
-        summary:"Abolition des redevances seigneuriales. Effets à Séchilienne à préciser (terres, cens, banalités).",
-        tags:["Révolution","droits"] },
-
-      { id:"re-2", year:"1790", era:"revolution", title:"Création de la commune (Isère)",
-        summary:"Nouvel échelon administratif ; naissance de la municipalité moderne et des registres d'état civil.",
-        tags:["commune","Isère"] },
-
-      { id:"re-3", year:"1791–1793", era:"revolution", title:"Biens nationaux",
-        summary:"Vente des biens ecclésiastiques et seigneuriaux ; recomposition foncière locale (à sourcer dans les ADI).",
-        tags:["biens nationaux"] },
-
-      { id:"re-4", year:"7 mars 1815", era:"revolution", title:"Route Napoléon (Laffrey, proximité)",
-        summary:"Le retour de Napoléon passe par Laffrey ; impact régional (Cent-Jours) à recontextualiser pour Séchilienne.",
-        tags:["Napoléon","Cent-Jours"] },
-    ];
-
-    // Repères cartographiques (à remplacer par vos coordonnées exactes)
-    const POIS = [
-      { id:"voie",   name:"Voie romaine (tronçon)",    lat:45.055, lng:5.820, kind:"patrimoine", note:"Segment visible à photographier / sourcer" },
-      { id:"eglise", name:"Église / noyau paroissial", lat:45.048, lng:5.839, kind:"patrimoine", note:"Ancrage médiéval (à préciser)" },
-      { id:"chat",   name:"Château de Séchilienne",    lat:45.053, lng:5.840, kind:"patrimoine", note:"Existence antérieure (incendie 1944 hors période)" },
-      { id:"mottet", name:"Croix du Mottet",           lat:45.045, lng:5.850, kind:"mémoire",    note:"Toponyme lié à la maison du Mottet (mémoire ultérieure)" },
-      { id:"viz",    name:"Laffrey (route Napoléon)",  lat:45.036, lng:5.795, kind:"contexte",   note:"7 mars 1815, rencontre" },
-    ];
-
-    const FAMILIES = [
-      { name:"Alleman",  period:"XIIIe–XIVe",  note:"Lignée seigneuriale initiale (à sourcer : Guigues Iᵉʳ Alleman, hommages, partages)." },
-      { name:"Simiane",  period:"XVIe",        note:"Transmission par alliances / héritages (filiations à préciser)." },
-      { name:"du Mottet",period:"XVIIe–XVIIIe",note:"Gestion des terroirs et toponymie (Croix du Mottet). Rôle politique local à éclairer." },
-    ];
-
-    // ---------------- UI helpers ----------------
+    /*************** Petits composants UI ***************/
     const Pill = ({ active, children, onClick }) => (
       <button onClick={onClick} className={`px-3 py-1 rounded-full text-sm transition-all border ${active ? 'bg-black/90 text-white border-black shadow' : 'bg-white/70 backdrop-blur border-black/10 hover:bg-white'}`}>{children}</button>
     );
-
     const Card = ({ children, className='' }) => (
       <div className={`rounded-2xl border border-black/10 bg-white/80 backdrop-blur shadow-sm ${className}`}>{children}</div>
     );
-
     const SectionTitle = ({ icon, title, subtitle }) => (
       <div className="flex items-end justify-between gap-4">
         <div>
@@ -123,7 +118,7 @@
       </div>
     );
 
-    // ---------------- Carte ----------------
+    /*************** Carte ***************/
     function CarteLeaflet({ pois }){
       const mapRef = React.useRef(null);
       React.useEffect(() => {
@@ -146,7 +141,7 @@
           (groups[p.kind] ||= L.layerGroup()).addLayer(m);
           markers.push(m);
         });
-        Object.entries(groups).forEach(([k,g]) => g.addTo(map));
+        Object.entries(groups).forEach(([,g]) => g.addTo(map));
         L.control.layers({}, groups, { collapsed:false }).addTo(map);
         if(markers.length){ map.fitBounds(L.featureGroup(markers).getBounds().pad(0.2)); }
         return () => map.remove();
@@ -160,12 +155,12 @@
       );
     }
 
-    // ---------------- Frise ----------------
+    /*************** Frise ***************/
     function Frise({ events, eraFilter }){
       const data = React.useMemo(() => events.filter(e => eraFilter === 'all' || e.era === eraFilter), [events, eraFilter]);
       return (
         <Card className="p-4 md:p-6">
-          <SectionTitle icon={<span>🕰️</span>} title="Frise (fondations → 1815)" subtitle="Jalons principaux, cliquables vers fiches à venir."/>
+          <SectionTitle icon={<span>🕰️</span>} title="Frise (fondations → 1815)" subtitle="Jalons principaux (cliquables vers fiches à venir)."/>
           <div className="mt-4 overflow-x-auto no-scrollbar">
             <div className="flex gap-4 min-w-max pr-4">
               {data.map(e => (
@@ -186,7 +181,7 @@
       );
     }
 
-    // ---------------- Encadré focus ----------------
+    /*************** Encadré focus ***************/
     function FocusAutonomie(){
       return (
         <Card className="p-4 md:p-6">
@@ -199,7 +194,7 @@
       );
     }
 
-    // ---------------- Généalogies ----------------
+    /*************** Généalogies ***************/
     function Genealogies({ families }){
       return (
         <Card className="p-4 md:p-6">
@@ -216,14 +211,163 @@
               </div>
             ))}
           </div>
-          <p className="mt-4 text-xs text-black/60">À remplacer par une généalogie sourcée (GEDCOM → JSON) avec liens vers chartes et repères chronologiques.</p>
+          <p className="mt-4 text-xs text-black/60">Remplacez par une généalogie sourcée (GEDCOM → JSON) si besoin.</p>
         </Card>
       );
     }
 
+    /*************** Admin (édition) ***************/
+    function Field({ label, children }){
+      return <label className="block text-sm mb-2">{label}<div className="mt-1">{children}</div></label>;
+    }
+    function Input(props){ return <input {...props} className={"w-full rounded-lg border border-black/15 px-3 py-2 text-sm bg-white/90 "+(props.className||"")} /> }
+    function Textarea(props){ return <textarea {...props} className={"w-full rounded-lg border border-black/15 px-3 py-2 text-sm bg-white/90 "+(props.className||"")} /> }
+
+    function AdminPanel({data, setData}){
+      const [tab, setTab] = React.useState('events');
+      const [selected, setSelected] = React.useState(null);
+      const [local, setLocal] = React.useState(JSON.stringify(data, null, 2));
+
+      React.useEffect(()=>{ setLocal(JSON.stringify(data, null, 2)); }, [data]);
+
+      function onSelect(collection, index){
+        setTab(collection);
+        setSelected(index);
+      }
+      function updateCollection(collection, index, patch){
+        const clone = JSON.parse(JSON.stringify(data));
+        Object.assign(clone[collection][index], patch);
+        setData(clone);
+      }
+      function addItem(collection, newObj){
+        const clone = JSON.parse(JSON.stringify(data));
+        clone[collection].push(newObj);
+        setData(clone);
+        setSelected(clone[collection].length-1);
+        setTab(collection);
+      }
+      function removeItem(collection, index){
+        const clone = JSON.parse(JSON.stringify(data));
+        clone[collection].splice(index,1);
+        setData(clone);
+        setSelected(null);
+      }
+      function exportJSON(){
+        const blob = new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = "data.json";
+        a.click();
+      }
+      function copyJSON(){
+        navigator.clipboard.writeText(JSON.stringify(data,null,2));
+        alert("Copié dans le presse-papiers !");
+      }
+
+      const currentList = data[tab];
+      const current = selected!=null ? currentList[selected] : null;
+
+      return (
+        <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex">
+          <div className="w-80 bg-white h-full border-r border-black/10 p-3 overflow-y-auto">
+            <div className="flex gap-1 mb-2">
+              {["events","pois","families"].map(t=>(
+                <button key={t} onClick={()=>{setTab(t);setSelected(null);}} className={"btn "+(tab===t?"btn-primary":"btn-ghost")}>
+                  {t==="events"?"Frise":t==="pois"?"Carte":"Maisons"}
+                </button>
+              ))}
+            </div>
+            <div className="text-xs text-black/60 mb-2">Clique un item pour l’éditer.</div>
+            <div className="space-y-1">
+              {currentList.map((it, i)=>(
+                <button key={i} onClick={()=>setSelected(i)} className={"w-full text-left px-3 py-2 rounded-lg border "+(selected===i?"bg-black text-white border-black":"bg-white border-black/10 hover:bg-black/5")}>
+                  <div className="text-sm font-medium truncate">{it.title||it.name||it.name}</div>
+                  <div className="text-xs opacity-70 truncate">{it.year||it.kind||it.period}</div>
+                </button>
+              ))}
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {tab==="events" && <button className="btn btn-ghost" onClick={()=>addItem("events",{id:"new-"+Date.now(),year:"",era:"moyenage",title:"",summary:"",tags:[]})}>+ Événement</button>}
+              {tab==="pois" && <button className="btn btn-ghost" onClick={()=>addItem("pois",{id:"p-"+Date.now(),name:"",lat:45,lng:5.8,kind:"patrimoine",note:""})}>+ Lieu</button>}
+              {tab==="families" && <button className="btn btn-ghost" onClick={()=>addItem("families",{name:"",period:"",note:""})}>+ Maison</button>}
+              {selected!=null && <button className="btn btn-ghost" onClick={()=>removeItem(tab,selected)}>🗑 Supprimer</button>}
+            </div>
+            <div className="mt-4">
+              <button className="btn btn-primary w-full" onClick={exportJSON}>⬇️ Exporter data.json</button>
+              <button className="btn btn-ghost w-full mt-2" onClick={copyJSON}>⧉ Copier JSON</button>
+            </div>
+            <div className="mt-3 text-[11px] text-black/60">Pour publier : uploade <code>data.json</code> dans GitHub (racine du dépôt).</div>
+          </div>
+
+          <div className="flex-1 bg-white h-full p-4 overflow-y-auto">
+            <div className="flex justify-between items-center">
+              <div className="font-semibold">Édition {tab==='events'?'— Frise':tab==='pois'?'— Carte':'— Maisons'}</div>
+              <button className="btn btn-ghost" onClick={()=>document.dispatchEvent(new CustomEvent('close-admin'))}>Fermer</button>
+            </div>
+            {!current && <div className="text-sm text-black/60 mt-4">Sélectionne un élément à gauche ou ajoute-en un.</div>}
+            {current && tab==="events" && (
+              <div className="mt-4 grid md:grid-cols-2 gap-4">
+                <Field label="ID"><Input value={current.id} onChange={e=>updateCollection('events',selected,{id:e.target.value})}/></Field>
+                <Field label="Année / période"><Input value={current.year} onChange={e=>updateCollection('events',selected,{year:e.target.value})}/></Field>
+                <Field label="Époque (antiquite, moyenage, modernes, revolution)">
+                  <Input value={current.era} onChange={e=>updateCollection('events',selected,{era:e.target.value})}/>
+                </Field>
+                <Field label="Titre"><Input value={current.title} onChange={e=>updateCollection('events',selected,{title:e.target.value})}/></Field>
+                <div className="md:col-span-2">
+                  <Field label="Résumé"><Textarea rows="4" value={current.summary} onChange={e=>updateCollection('events',selected,{summary:e.target.value})}/></Field>
+                </div>
+                <Field label="Tags (séparés par des virgules)">
+                  <Input value={current.tags.join(', ')} onChange={e=>updateCollection('events',selected,{tags:e.target.value.split(',').map(s=>s.trim()).filter(Boolean)})}/>
+                </Field>
+              </div>
+            )}
+            {current && tab==="pois" && (
+              <div className="mt-4 grid md:grid-cols-2 gap-4">
+                <Field label="ID"><Input value={current.id} onChange={e=>updateCollection('pois',selected,{id:e.target.value})}/></Field>
+                <Field label="Nom du lieu"><Input value={current.name} onChange={e=>updateCollection('pois',selected,{name:e.target.value})}/></Field>
+                <Field label="Latitude"><Input type="number" step="0.000001" value={current.lat} onChange={e=>updateCollection('pois',selected,{lat:parseFloat(e.target.value)})}/></Field>
+                <Field label="Longitude"><Input type="number" step="0.000001" value={current.lng} onChange={e=>updateCollection('pois',selected,{lng:parseFloat(e.target.value)})}/></Field>
+                <Field label="Catégorie (patrimoine / mémoire / industrie / contexte)">
+                  <Input value={current.kind} onChange={e=>updateCollection('pois',selected,{kind:e.target.value})}/>
+                </Field>
+                <div className="md:col-span-2">
+                  <Field label="Note"><Textarea rows="3" value={current.note} onChange={e=>updateCollection('pois',selected,{note:e.target.value})}/></Field>
+                </div>
+              </div>
+            )}
+            {current && tab==="families" && (
+              <div className="mt-4 grid md:grid-cols-2 gap-4">
+                <Field label="Nom"><Input value={current.name} onChange={e=>updateCollection('families',selected,{name:e.target.value})}/></Field>
+                <Field label="Période"><Input value={current.period} onChange={e=>updateCollection('families',selected,{period:e.target.value})}/></Field>
+                <div className="md:col-span-2">
+                  <Field label="Note"><Textarea rows="3" value={current.note} onChange={e=>updateCollection('families',selected,{note:e.target.value})}/></Field>
+                </div>
+              </div>
+            )}
+            <div className="mt-6">
+              <div className="text-xs text-black/60 mb-1">Aperçu du JSON (lecture seule) :</div>
+              <pre className="text-xs bg-black/5 p-3 rounded-xl overflow-x-auto">{JSON.stringify(data,null,2)}</pre>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /*************** App ***************/
     function App(){
+      const [data, setData] = React.useState(DEFAULT_DATA);
       const [tab, setTab] = React.useState('carte');
       const [era, setEra] = React.useState('all');
+      const [adminOpen, setAdminOpen] = React.useState(false);
+      const isAdmin = new URLSearchParams(location.search).get('admin') === '1';
+
+      React.useEffect(()=>{ loadData().then(setData); }, []);
+      React.useEffect(()=>{
+        const close = ()=>setAdminOpen(false);
+        document.addEventListener('close-admin', close);
+        return ()=>document.removeEventListener('close-admin', close);
+      },[]);
+
       return (
         <div>
           <header className="sticky top-0 z-30 backdrop-blur bg-[rgba(255,255,255,0.65)] border-b border-black/10">
@@ -239,8 +383,11 @@
                   { id:'genea', label:'Maisons' },
                   { id:'focus', label:'Focus' },
                 ].map(t => (
-                  <button key={t.id} className={`px-3 py-2 rounded-xl text-sm border transition ${tab===t.id ? 'bg-black text-white border-black shadow' : 'bg-white/70 border-black/10 hover:bg-white'}`} onClick={() => setTab(t.id)}>{t.label}</button>
+                  <button key={t.id} className={"btn "+(tab===t.id?"btn-primary":"btn-ghost")} onClick={() => setTab(t.id)}>{t.label}</button>
                 ))}
+                {isAdmin && (
+                  <button className="btn btn-ghost" onClick={()=>setAdminOpen(true)}>✏️ Modifier</button>
+                )}
               </nav>
             </div>
           </header>
@@ -249,16 +396,16 @@
             <Card className="p-3">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-sm text-black/60 mr-1">Filtrer la période :</span>
-                {ERAS.map(e => <Pill key={e.id} active={era===e.id} onClick={() => setEra(e.id)}>{e.label}</Pill>)}
+                {data.eras.map(e => <Pill key={e.id} active={era===e.id} onClick={() => setEra(e.id)}>{e.label}</Pill>)}
               </div>
             </Card>
           </div>
 
           <main className="mx-auto max-w-6xl px-4 py-6 space-y-6">
-            {tab==='carte' && <CarteLeaflet pois={POIS}/>} 
-            {tab==='frise' && <Frise events={EVENTS} eraFilter={era}/>} 
-            {tab==='genea' && <Genealogies families={FAMILIES}/>} 
-            {tab==='focus' && <FocusAutonomie/>} 
+            {tab==='carte' && <CarteLeaflet pois={data.pois}/>}
+            {tab==='frise' && <Frise events={data.events} eraFilter={era}/>}
+            {tab==='genea' && <Genealogies families={data.families}/>}
+            {tab==='focus' && <FocusAutonomie/>}
 
             <Card className="p-4 md:p-6">
               <SectionTitle icon={<span>🧭</span>} title="Méthodologie & sources (à intégrer)" subtitle="À compléter avant publication définitive"/>
@@ -270,15 +417,18 @@
                 <li>Archives communales : 1789–1793 (<strong>biens nationaux</strong>, délibérations).</li>
                 <li>Encadré <strong>7 mars 1815</strong> : Route Napoléon (Laffrey) et perception locale.</li>
               </ul>
-              <div className="mt-4 text-xs text-black/60">Les mentions « à sourcer » signalent des points à vérifier dans les archives (ADI, AHPV, bibliographie locale) avant mise en ligne officielle.</div>
+              <div className="mt-4 text-xs text-black/60">Les mentions « à sourcer » signalent des points à vérifier (ADI, AHPV, bibliographie locale) avant mise en ligne officielle.</div>
             </Card>
           </main>
 
-          <footer className="mx-auto max-w-6xl px-4 pb-10 text-xs text-black/50">Gabarit © 2025 — Commune de Séchilienne / AHPV — Focus jusqu’en 1815 — React UMD + Leaflet + Tailwind (sans build).</footer>
+          <footer className="mx-auto max-w-6xl px-4 pb-10 text-xs text-black/50">Gabarit © 2025 — Commune de Séchilienne / AHPV — Données via data.json — React UMD + Leaflet + Tailwind.</footer>
+
+          {adminOpen && <AdminPanel data={data} setData={setData} />}
         </div>
       );
     }
 
+    /*************** Bootstrap ***************/
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App/>);
   </script>
