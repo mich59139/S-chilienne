@@ -1,455 +1,303 @@
-import React, { useMemo, useState } from "react";
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Séchilienne — Histoire vivante</title>
+  <!-- Tailwind via CDN (pratique pour GitHub Pages sans build) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Optionnel : masquer la barre de défilement horizontale des frises */
+    .no-scrollbar::-webkit-scrollbar{ display:none; }
+    .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
+  </style>
+</head>
+<body class="min-h-screen bg-[radial-gradient(ellipse_at_top,_#f6f2ea,_#ece7df)] text-neutral-900">
+  <div id="root"></div>
 
-/**
- * Histoire vivante de Séchilienne — Gabarit interactif (une seule page)
- * --------------------------------------------------------------
- * • Tailwind CSS pour la mise en forme (classes utilitaires)
- * • Aucune dépendance externe obligatoire (pour rester portable)
- * • Sections : Carte (placeholder), Frise chronologique, Généalogies, Industrie, Mémoire 39–45
- * • Données d'exemple ≈ à remplacer par vos contenus sourcés (cf. TODO en bas)
- * • Design : cartes arrondies, ombres douces, grille aérée, petites animations CSS
- */
+  <!-- React 18 UMD + ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <!-- Babel pour supporter le JSX directement (pas de build) -->
+  <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
 
-// === Données d'exemple (à remplacer) ===
-const ERAS = [
-  { id: "all", label: "Tout" },
-  { id: "antiquite", label: "Antiquité" },
-  { id: "moyenage", label: "Moyen Âge" },
-  { id: "modernes", label: "Temps modernes" },
-  { id: "xix", label: "XIXe" },
-  { id: "xx", label: "XXe" },
-  { id: "xxi", label: "XXIe" },
-];
+  <script type="text/babel">
+    // ========== Données d'exemple (remplacez par vos contenus validés) ==========
+    const ERAS = [
+      { id: "all", label: "Tout" },
+      { id: "antiquite", label: "Antiquité" },
+      { id: "moyenage", label: "Moyen Âge" },
+      { id: "modernes", label: "Temps modernes" },
+      { id: "xix", label: "XIXe" },
+      { id: "xx", label: "XXe" },
+      { id: "xxi", label: "XXIe" },
+    ];
 
-const EVENTS = [
-  {
-    id: "e-voie-romaine",
-    year: "Ier–IVe s.",
-    era: "antiquite",
-    title: "Voie romaine de la Romanche",
-    summary:
-      "Tracé antique dans la vallée (Grenoble ⇄ Oisans), tronçons visibles et à documenter. (À sourcer précisément pour le site)",
-    tags: ["patrimoine", "archéo"],
-  },
-  {
-    id: "e-alleman",
-    year: "v. 1195–1248",
-    era: "moyenage",
-    title: "Guigues Iᵉʳ Alleman, 1ᵉʳ seigneur de Séchilienne",
-    summary:
-      "Début de la lignée seigneuriale locale. (Dates et filiations à vérifier selon vos sources)",
-    tags: ["seigneurs", "généalogie"],
-  },
-  {
-    id: "e-transport-dauphine",
-    year: "1349",
-    era: "moyenage",
-    title: "Transport du Dauphiné à la Couronne de France",
-    summary:
-      "Contexte territorial majeur pour la région. (Note de contexte, à garder courte)",
-    tags: ["contexte"],
-  },
-  {
-    id: "e-maisons-seigneuriales",
-    year: "XVIe–XVIIe s.",
-    era: "modernes",
-    title: "Allégeances & maisons (Alleman → Simiane → du Mottet)",
-    summary:
-      "Jeux d’influences entre familles locales et grands voisins (dont Lesdiguières). (À sourcer)",
-    tags: ["seigneurs", "politique"],
-  },
-  {
-    id: "e-industrie-romanche",
-    year: "fin XIXe–XXe s.",
-    era: "xix",
-    title: "Hydroélectricité & électrométallurgie de la Romanche",
-    summary:
-      "Barrage, usines de vallée, pôles d’emplois & modernisation. (Contexte régional, focus Séchilienne à préciser)",
-    tags: ["industrie", "énergie"],
-  },
-  {
-    id: "e-silicium",
-    year: "XXe–XXIe s.",
-    era: "xxi",
-    title: "Usine de silicium à Séchilienne",
-    summary:
-      "Site industriel emblématique à documenter (photos, dates, acteurs).",
-    tags: ["industrie", "économie"],
-  },
-  {
-    id: "e-mottet-44",
-    year: "21–22 août 1944",
-    era: "xx",
-    title: "Combats de la Croix du Mottet",
-    summary:
-      "Affrontements & mémoires locales (témoignages, stèles, noms).",
-    tags: ["mémoire", "Seconde Guerre mondiale"],
-  },
-  {
-    id: "e-chateau-1944",
-    year: "1944",
-    era: "xx",
-    title: "Incendie du château de Séchilienne",
-    summary: "Destruction par les troupes allemandes (à contextualiser et sourcer).",
-    tags: ["patrimoine", "WW2"],
-  },
-];
+    const EVENTS = [
+      { id:"e-voie-romaine", year:"Ier–IVe s.", era:"antiquite", title:"Voie romaine de la Romanche", summary:"Tracé antique (Grenoble ⇄ Oisans), tronçons à documenter précisément.", tags:["patrimoine","archéo"] },
+      { id:"e-alleman", year:"v. 1195–1248", era:"moyenage", title:"Guigues Iᵉʳ Alleman, 1ᵉʳ seigneur", summary:"Début de la lignée seigneuriale locale.", tags:["seigneurs","généalogie"] },
+      { id:"e-transport", year:"1349", era:"moyenage", title:"Transport du Dauphiné à la France", summary:"Contexte territorial majeur pour la région.", tags:["contexte"] },
+      { id:"e-maisons", year:"XVIe–XVIIe s.", era:"modernes", title:"Alliances Alleman → Simiane → du Mottet", summary:"Jeux d'influences avec Lesdiguières.", tags:["seigneurs","politique"] },
+      { id:"e-industrie", year:"fin XIXe–XXe s.", era:"xix", title:"Hydroélectricité & électrométallurgie", summary:"Barrages, centrales, modernisation de la vallée.", tags:["industrie","énergie"] },
+      { id:"e-silicium", year:"XXe–XXIe s.", era:"xxi", title:"Usine de silicium à Séchilienne", summary:"Site emblématique à documenter (photos, dates, acteurs).", tags:["industrie","économie"] },
+      { id:"e-mottet-44", year:"21–22 août 1944", era:"xx", title:"Combats de la Croix du Mottet", summary:"Affrontements & mémoire locale.", tags:["mémoire","WW2"] },
+      { id:"e-chateau", year:"1944", era:"xx", title:"Incendie du château", summary:"Destruction par troupes allemandes (contexte à sourcer).", tags:["patrimoine","WW2"] },
+    ];
 
-const PLACES = [
-  {
-    id: "p-rn-roman",
-    name: "Tronçons de voie romaine",
-    kind: "patrimoine",
-    blurb: "Photographier, cartographier, sourcer — prévoir zooms et avant/après.",
-  },
-  {
-    id: "p-silicium",
-    name: "Usine de silicium",
-    kind: "industrie",
-    blurb: "Mettre en valeur l'histoire, les procédés, les acteurs, l'emploi.",
-  },
-  {
-    id: "p-croix-mottet",
-    name: "Croix du Mottet",
-    kind: "mémoire",
-    blurb: "Fiche mémorielle (21–22 août 1944), carte précise + liste des victimes.",
-  },
-  {
-    id: "p-chateau",
-    name: "Château de Séchilienne",
-    kind: "patrimoine",
-    blurb: "Histoire du site, incendie de 1944, état actuel, iconographie.",
-  },
-];
+    const PLACES = [
+      { id:"p-rn-roman", name:"Tronçons de voie romaine", kind:"patrimoine", blurb:"Photographier, cartographier, sourcer — zooms et avant/après." },
+      { id:"p-silicium", name:"Usine de silicium", kind:"industrie", blurb:"Histoire, procédés, acteurs, emploi." },
+      { id:"p-croix-mottet", name:"Croix du Mottet", kind:"mémoire", blurb:"Fiche mémorielle (21–22 août 1944), carte précise + victimes." },
+      { id:"p-chateau", name:"Château de Séchilienne", kind:"patrimoine", blurb:"Histoire du site, incendie de 1944, état actuel, iconographie." },
+    ];
 
-const FAMILIES = [
-  { name: "Alleman", period: "XIIIe–XIVe", note: "Première lignée locale documentée (à détailler)." },
-  { name: "Simiane", period: "XVIe?", note: "Transmission/alliances (vérifier filiations)." },
-  { name: "du Mottet", period: "XVIIe–XVIIIe", note: "Influence territoriale, toponymie (Croix du Mottet)." },
-];
+    const FAMILIES = [
+      { name:"Alleman", period:"XIIIe–XIVe", note:"Première lignée locale documentée." },
+      { name:"Simiane", period:"XVIe?", note:"Transmission/alliances (à préciser)." },
+      { name:"du Mottet", period:"XVIIe–XVIIIe", note:"Influence territoriale, toponymie (Croix du Mottet)." },
+    ];
 
-const INDUSTRIES = [
-  { name: "Hydroélectricité", start: 1890, end: 2025, note: "Romanche : barrages, centrales, modernisations." },
-  { name: "Silicium", start: 1950, end: 2025, note: "Usine à Séchilienne : production, innovations, emplois." },
-];
+    const INDUSTRIES = [
+      { name:"Hydroélectricité", start:1890, end:2025, note:"Romanche : barrages, centrales, modernisations." },
+      { name:"Silicium", start:1950, end:2025, note:"Production, innovations, emplois." },
+    ];
 
-const MEMOIRE44 = [
-  {
-    id: "m1",
-    title: "21–22 août 1944 : combats",
-    text:
-      "Synthèse locale (unités, parcours, chronologie), renvoyer vers dossiers AHPV & monuments.",
-  },
-  {
-    id: "m2",
-    title: "Victimes et lieux",
-    text: "Liste sourcée, fiches biographiques, carte précise (champs, hameaux, coordonnées).",
-  },
-  {
-    id: "m3",
-    title: "Transmission",
-    text: "Pistes pédagogiques, cérémonies, QR codes sur site, audio-guides.",
-  },
-];
+    const MEMOIRE44 = [
+      { id:"m1", title:"21–22 août 1944 : combats", text:"Synthèse locale : unités, chronologie, parcours." },
+      { id:"m2", title:"Victimes et lieux", text:"Liste sourcée, fiches bio, carte précise (champs, hameaux)." },
+      { id:"m3", title:"Transmission", text:"Pistes pédagogiques, cérémonies, QR codes, audio-guides." },
+    ];
 
-// Petits helpers visuels
-const Pill = ({ active, children, onClick }) => (
-  <button
-    onClick={onClick}
-    className={`px-3 py-1 rounded-full text-sm transition-all border ${
-      active
-        ? "bg-black/90 text-white border-black shadow"
-        : "bg-white/70 backdrop-blur border-black/10 hover:bg-white"
-    }`}
-  >
-    {children}
-  </button>
-);
+    // ========== Composants UI ==========
+    const Pill = ({ active, children, onClick }) => (
+      <button onClick={onClick} className={`px-3 py-1 rounded-full text-sm transition-all border ${active ? 'bg-black/90 text-white border-black shadow' : 'bg-white/70 backdrop-blur border-black/10 hover:bg-white'}`}>{children}</button>
+    );
 
-const Card = ({ children, className = "" }) => (
-  <div className={`rounded-2xl border border-black/10 bg-white/80 backdrop-blur shadow-sm ${className}`}>
-    {children}
-  </div>
-);
+    const Card = ({ children, className='' }) => (
+      <div className={`rounded-2xl border border-black/10 bg-white/80 backdrop-blur shadow-sm ${className}`}>{children}</div>
+    );
 
-const SectionTitle = ({ icon, title, subtitle }) => (
-  <div className="flex items-end justify-between gap-4">
-    <div>
-      <h2 className="text-2xl md:text-3xl font-semibold tracking-tight flex items-center gap-3">
-        <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-black/10 bg-white/70">{icon}</span>
-        {title}
-      </h2>
-      {subtitle && (
-        <p className="text-sm text-black/60 mt-1">{subtitle}</p>
-      )}
-    </div>
-  </div>
-);
+    const SectionTitle = ({ icon, title, subtitle }) => (
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-semibold tracking-tight flex items-center gap-3">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-black/10 bg-white/70">{icon}</span>
+            {title}
+          </h2>
+          {subtitle && <p className="text-sm text-black/60 mt-1">{subtitle}</p>}
+        </div>
+      </div>
+    );
 
-function Frise({ events, eraFilter }) {
-  const data = useMemo(
-    () => events.filter((e) => eraFilter === "all" || e.era === eraFilter),
-    [events, eraFilter]
-  );
+    function Frise({ events, eraFilter }){
+      const data = React.useMemo(() => events.filter(e => eraFilter === 'all' || e.era === eraFilter), [events, eraFilter]);
+      return (
+        <Card className="p-4 md:p-6">
+          <SectionTitle icon={<span>🕰️</span>} title="Frise chronologique" subtitle="Faites glisser pour parcourir ; chaque carte peut renvoyer vers une fiche."/>
+          <div className="mt-4 overflow-x-auto no-scrollbar">
+            <div className="flex gap-4 min-w-max pr-4">
+              {data.map(e => (
+                <div key={e.id} className="w-80 shrink-0">
+                  <div className="h-full rounded-2xl border border-black/10 bg-gradient-to-b from-white to-white/60 p-4 hover:shadow-md transition-shadow">
+                    <div className="text-xs tracking-wide uppercase text-black/60">{e.year}</div>
+                    <div className="mt-1 text-lg font-semibold">{e.title}</div>
+                    <p className="mt-2 text-sm text-black/70 leading-relaxed">{e.summary}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {e.tags.map(t => <span key={t} className="px-2 py-0.5 text-xs rounded-full border border-black/10 bg-white/70">{t}</span>)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
+      );
+    }
 
-  return (
-    <Card className="p-4 md:p-6">
-      <SectionTitle
-        icon={<span>🕰️</span>}
-        title="Frise chronologique"
-        subtitle="Faites glisser pour parcourir les époques ; chaque carte renvoie vers une fiche détaillée."
-      />
-      <div className="mt-4 overflow-x-auto no-scrollbar">
-        <div className="flex gap-4 min-w-max pr-4">
-          {data.map((e) => (
-            <div key={e.id} className="w-80 shrink-0">
-              <div className="h-full rounded-2xl border border-black/10 bg-gradient-to-b from-white to-white/60 p-4 hover:shadow-md transition-shadow">
-                <div className="text-xs tracking-wide uppercase text-black/60">{e.year}</div>
-                <div className="mt-1 text-lg font-semibold">{e.title}</div>
-                <p className="mt-2 text-sm text-black/70 leading-relaxed">{e.summary}</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {e.tags.map((t) => (
-                    <span key={t} className="px-2 py-0.5 text-xs rounded-full border border-black/10 bg-white/70">
-                      {t}
-                    </span>
-                  ))}
+    function Marker({ x, y, label }){
+      return (
+        <g transform={`translate(${x}, ${y})`}>
+          <circle r="7" fill="#111"/>
+          <circle r="3" fill="#fff"/>
+          <rect x="10" y="-10" rx="6" ry="6" width="130" height="22" fill="#ffffffcc" stroke="#0000001a" />
+          <text x="18" y="6" fontSize="12" fill="#111">{label}</text>
+        </g>
+      )
+    }
+
+    function Carte({ places }){
+      return (
+        <Card className="p-4 md:p-6">
+          <SectionTitle icon={<span>🗺️</span>} title="Carte parlante (démo)" subtitle="Zone de carte interactive — peut être branchée sur Leaflet/MapLibre."/>
+          <div className="mt-4 grid md:grid-cols-3 gap-4">
+            <div className="md:col-span-2">
+              <div className="relative h-72 md:h-96 rounded-2xl border border-black/10 bg-[radial-gradient(ellipse_at_top,_#f7f4ee,_#eae6df)] overflow-hidden">
+                <svg viewBox="0 0 600 400" className="absolute inset-0 w-full h-full">
+                  <defs>
+                    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
+                    </pattern>
+                  </defs>
+                  <rect width="600" height="400" fill="url(#grid)" />
+                  <path d="M 0 260 C 120 220, 240 320, 360 300 C 440 288, 520 260, 600 280" fill="none" stroke="#7bb0d8" strokeWidth="10" strokeLinecap="round" />
+                  <g>
+                    <Marker x={120} y={240} label="Voie romaine" />
+                    <Marker x={300} y={210} label="Croix du Mottet" />
+                    <Marker x={430} y={260} label="Usine silicium" />
+                    <Marker x={220} y={180} label="Château" />
+                  </g>
+                </svg>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {places.map(p => (
+                <div key={p.id} className="p-3 rounded-xl border border-black/10 bg-white/70">
+                  <div className="text-sm font-semibold">{p.name}</div>
+                  <div className="text-xs text-black/60 mt-0.5 uppercase tracking-wide">{p.kind}</div>
+                  <p className="text-sm text-black/70 mt-1">{p.blurb}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
+      );
+    }
+
+    function Genealogies({ families }){
+      return (
+        <Card className="p-4 md:p-6">
+          <SectionTitle icon={<span>🌳</span>} title="Généalogies seigneuriales" subtitle="Arborescence simplifiée — remplacez par votre arbre détaillé."/>
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+            {families.map((f, idx) => (
+              <div key={f.name} className="relative">
+                {idx < families.length - 1 && <div className="hidden md:block absolute top-10 left-full w-8 h-0.5 bg-black/10"/>}
+                <div className="p-4 rounded-2xl border border-black/10 bg-white/70">
+                  <div className="text-lg font-semibold">{f.name}</div>
+                  <div className="text-xs text-black/60 uppercase tracking-wide">{f.period}</div>
+                  <p className="text-sm text-black/70 mt-2">{f.note}</p>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-function Carte({ places }) {
-  return (
-    <Card className="p-4 md:p-6">
-      <SectionTitle
-        icon={<span>🗺️</span>}
-        title="Carte parlante (placeholder)"
-        subtitle="Zone de carte interactive : à brancher sur Leaflet/MapLibre ou une image HD annotée."
-      />
-
-      {/* Placeholder visuel : "mini-carte" stylisée */}
-      <div className="mt-4 grid md:grid-cols-3 gap-4">
-        <div className="md:col-span-2">
-          <div className="relative h-72 md:h-96 rounded-2xl border border-black/10 bg-[radial-gradient(ellipse_at_top,_#f7f4ee,_#eae6df)] overflow-hidden">
-            {/* Grille et points fictifs */}
-            <svg viewBox="0 0 600 400" className="absolute inset-0 w-full h-full">
-              <defs>
-                <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                  <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
-                </pattern>
-              </defs>
-              <rect width="600" height="400" fill="url(#grid)" />
-              {/* Cours de la Romanche (stylisé) */}
-              <path d="M 0 260 C 120 220, 240 320, 360 300 C 440 288, 520 260, 600 280" fill="none" stroke="#7bb0d8" strokeWidth="10" strokeLinecap="round" />
-              {/* Points d'intérêt */}
-              <g>
-                <Marker x={120} y={240} label="Voie romaine" />
-                <Marker x={300} y={210} label="Croix du Mottet" />
-                <Marker x={430} y={260} label="Usine silicium" />
-                <Marker x={220} y={180} label="Château" />
-              </g>
-            </svg>
+            ))}
           </div>
-        </div>
-        <div className="space-y-3">
-          {places.map((p) => (
-            <div key={p.id} className="p-3 rounded-xl border border-black/10 bg-white/70">
-              <div className="text-sm font-semibold">{p.name}</div>
-              <div className="text-xs text-black/60 mt-0.5 uppercase tracking-wide">{p.kind}</div>
-              <p className="text-sm text-black/70 mt-1">{p.blurb}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </Card>
-  );
-}
+          <p className="mt-4 text-xs text-black/60">Astuce : importer un GEDCOM → JSON pour rendre l'arbre interactif (dépliants, portraits).</p>
+        </Card>
+      );
+    }
 
-function Marker({ x, y, label }) {
-  return (
-    <g transform={`translate(${x}, ${y})`}>
-      <circle r="7" fill="#111" />
-      <circle r="3" fill="#fff" />
-      <rect x="10" y="-10" rx="6" ry="6" width="130" height="22" fill="#ffffffcc" stroke="#0000001a" />
-      <text x="18" y="6" fontSize="12" fill="#111">{label}</text>
-    </g>
-  );
-}
-
-function Genealogies({ families }) {
-  return (
-    <Card className="p-4 md:p-6">
-      <SectionTitle icon={<span>🌳</span>} title="Généalogies seigneuriales" subtitle="Arborescence simplifiée — à remplacer par votre arbre détaillé." />
-
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-        {families.map((f, idx) => (
-          <div key={f.name} className="relative">
-            {idx < families.length - 1 && (
-              <div className="hidden md:block absolute top-10 left-full w-8 h-0.5 bg-black/10" />
-            )}
-            <div className="p-4 rounded-2xl border border-black/10 bg-white/70">
-              <div className="text-lg font-semibold">{f.name}</div>
-              <div className="text-xs text-black/60 uppercase tracking-wide">{f.period}</div>
-              <p className="text-sm text-black/70 mt-2">{f.note}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <p className="mt-4 text-xs text-black/60">Astuce : brancher une vraie généalogie (GEDCOM → JSON) pour un rendu interactif (dépliants, fiches, portraits).</p>
-    </Card>
-  );
-}
-
-function Industrie({ industries }) {
-  return (
-    <Card className="p-4 md:p-6">
-      <SectionTitle icon={<span>⚙️</span>} title="Industrie & énergie" subtitle="Chronologie des activités (barres proportionnelles)" />
-
-      <div className="mt-6 space-y-4">
-        {industries.map((i) => (
-          <div key={i.name} className="p-4 rounded-xl border border-black/10 bg-white/70">
-            <div className="flex items-baseline justify-between">
-              <div>
-                <div className="text-base font-semibold">{i.name}</div>
-                <div className="text-xs text-black/60">{i.start} → {i.end}</div>
+    function Industrie({ industries }){
+      return (
+        <Card className="p-4 md:p-6">
+          <SectionTitle icon={<span>⚙️</span>} title="Industrie & énergie" subtitle="Chronologie des activités (barres proportionnelles)"/>
+          <div className="mt-6 space-y-4">
+            {industries.map(i => (
+              <div key={i.name} className="p-4 rounded-xl border border-black/10 bg-white/70">
+                <div className="flex items-baseline justify-between">
+                  <div>
+                    <div className="text-base font-semibold">{i.name}</div>
+                    <div className="text-xs text-black/60">{i.start} → {i.end}</div>
+                  </div>
+                  <div className="text-sm text-black/70">{i.note}</div>
+                </div>
+                <div className="mt-3 h-3 rounded-full bg-black/5">
+                  <div className="h-3 rounded-full bg-black/70" style={{ width: `${Math.min(100, Math.max(0, (i.end - i.start) / (2025 - 1800) * 100))}%` }} title={`${i.start}–${i.end}`}></div>
+                </div>
               </div>
-              <div className="text-sm text-black/70">{i.note}</div>
-            </div>
-            {/* Mini-barre temporelle */}
-            <div className="mt-3 h-3 rounded-full bg-black/5">
-              <div
-                className="h-3 rounded-full bg-black/70"
-                style={{ width: `${Math.min(100, Math.max(0, (i.end - i.start) / (2025 - 1800) * 100))}%` }}
-                title={`${i.start}–${i.end}`}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-4 text-xs text-black/60">
-        Idée : relier chaque activité à une fiche (photos chantier, ouvriers, coupures de presse, cartes postales, plans) + carte des sites.
-      </div>
-    </Card>
-  );
-}
-
-function Memoire({ items }) {
-  return (
-    <Card className="p-4 md:p-6">
-      <SectionTitle icon={<span>🕯️</span>} title="Mémoire 39–45" subtitle="Dossier local — Croix du Mottet, lieux, victimes, transmission" />
-      <div className="mt-4 grid md:grid-cols-3 gap-4">
-        {items.map((m) => (
-          <div key={m.id} className="p-4 rounded-2xl border border-black/10 bg-white/70">
-            <div className="text-base font-semibold">{m.title}</div>
-            <p className="text-sm text-black/70 mt-2">{m.text}</p>
-          </div>
-        ))}
-      </div>
-      <div className="mt-4 text-xs text-black/60">Prévoir : frise spécifique août 1944 + carte précise des lieux, fiches nominatives, lectures publiques, QR sur site.</div>
-    </Card>
-  );
-}
-
-// Composant principal
-export default function SechilienneHistoire() {
-  const [tab, setTab] = useState("carte");
-  const [era, setEra] = useState("all");
-
-  return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_#f6f2ea,_#ece7df)] text-neutral-900">
-      {/* En-tête */}
-      <header className="sticky top-0 z-30 backdrop-blur bg-[rgba(255,255,255,0.65)] border-b border-black/10">
-        <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold tracking-tight">Séchilienne — Histoire vivante</h1>
-            <p className="text-xs md:text-sm text-black/60">Un gabarit interactif pour le site de la commune • cartes • frises • généalogies • mémoire</p>
-          </div>
-          <nav className="flex items-center gap-1">
-            {[
-              { id: "carte", label: "Carte" },
-              { id: "frise", label: "Frise" },
-              { id: "genea", label: "Généalogies" },
-              { id: "industrie", label: "Industrie" },
-              { id: "memoire", label: "Mémoire 39–45" },
-            ].map((t) => (
-              <button
-                key={t.id}
-                className={`px-3 py-2 rounded-xl text-sm border transition ${
-                  tab === t.id
-                    ? "bg-black text-white border-black shadow"
-                    : "bg-white/70 border-black/10 hover:bg-white"
-                }`}
-                onClick={() => setTab(t.id)}
-              >
-                {t.label}
-              </button>
             ))}
-          </nav>
+          </div>
+          <div className="mt-4 text-xs text-black/60">Relier chaque activité à une fiche (photos, coupures, cartes, plans) + carte des sites.</div>
+        </Card>
+      );
+    }
+
+    function Memoire({ items }){
+      return (
+        <Card className="p-4 md:p-6">
+          <SectionTitle icon={<span>🕯️</span>} title="Mémoire 39–45" subtitle="Croix du Mottet, lieux, victimes, transmission"/>
+          <div className="mt-4 grid md:grid-cols-3 gap-4">
+            {items.map(m => (
+              <div key={m.id} className="p-4 rounded-2xl border border-black/10 bg-white/70">
+                <div className="text-base font-semibold">{m.title}</div>
+                <p className="text-sm text-black/70 mt-2">{m.text}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 text-xs text-black/60">Prévoir : frise août 1944 + carte précise des lieux, fiches nominatives, lectures publiques, QR sur site.</div>
+        </Card>
+      );
+    }
+
+    function App(){
+      const [tab, setTab] = React.useState('carte');
+      const [era, setEra] = React.useState('all');
+      return (
+        <div>
+          <header className="sticky top-0 z-30 backdrop-blur bg-[rgba(255,255,255,0.65)] border-b border-black/10">
+            <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-4">
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold tracking-tight">Séchilienne — Histoire vivante</h1>
+                <p className="text-xs md:text-sm text-black/60">Carte • Frise • Généalogies • Industrie • Mémoire 39–45</p>
+              </div>
+              <nav className="flex items-center gap-1">
+                {[
+                  { id:'carte', label:'Carte' },
+                  { id:'frise', label:'Frise' },
+                  { id:'genea', label:'Généalogies' },
+                  { id:'industrie', label:'Industrie' },
+                  { id:'memoire', label:'Mémoire 39–45' },
+                ].map(t => (
+                  <button key={t.id} className={`px-3 py-2 rounded-xl text-sm border transition ${tab===t.id ? 'bg-black text-white border-black shadow' : 'bg-white/70 border-black/10 hover:bg-white'}`} onClick={() => setTab(t.id)}>{t.label}</button>
+                ))}
+              </nav>
+            </div>
+          </header>
+
+          <div className="mx-auto max-w-6xl px-4 mt-4">
+            <Card className="p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm text-black/60 mr-1">Époque :</span>
+                {ERAS.map(e => <Pill key={e.id} active={era===e.id} onClick={() => setEra(e.id)}>{e.label}</Pill>)}
+              </div>
+            </Card>
+          </div>
+
+          <main className="mx-auto max-w-6xl px-4 py-6 space-y-6">
+            {tab==='carte' && <Carte places={PLACES}/>} 
+            {tab==='frise' && <Frise events={EVENTS} eraFilter={era}/>} 
+            {tab==='genea' && <Genealogies families={FAMILIES}/>} 
+            {tab==='industrie' && <Industrie industries={INDUSTRIES}/>} 
+            {tab==='memoire' && <Memoire items={MEMOIRE44}/>} 
+
+            <Card className="p-4 md:p-6">
+              <SectionTitle icon={<span>🧭</span>} title="Méthodologie & sources" subtitle="Pistes pour ancrer l'histoire locale dans le site"/>
+              <ul className="mt-4 grid md:grid-cols-3 gap-3 text-sm text-black/80 list-disc list-inside">
+                <li>Chaque carte → une fiche (texte court, galerie, carte, sources, liens AHPV).</li>
+                <li>Frise → albums thématiques (voies, seigneurs, industrie, 39–45).</li>
+                <li>Généalogies → arbre navigable + portraits.</li>
+                <li>Industrie → chronologies + cartes des sites.</li>
+                <li>Mémoire 39–45 → topographie précise, listes sourcées, QR sur monuments.</li>
+              </ul>
+              <div className="mt-4 text-xs text-black/60">Remplacez toutes les données d'exemple par vos contenus validés.</div>
+            </Card>
+
+            <Card className="p-4 md:p-6">
+              <SectionTitle icon={<span>🗒️</span>} title="À faire"/>
+              <ol className="mt-4 space-y-2 text-sm text-black/80 list-decimal pl-5">
+                <li>Remplacer <code>EVENTS</code> par votre frise sourcée.</li>
+                <li>Remplacer <code>PLACES</code> par vos points + vraie carte si souhaité.</li>
+                <li>Remplacer <code>FAMILIES</code> par l'arbre (Alleman → Simiane → du Mottet).</li>
+                <li>Remplacer <code>INDUSTRIES</code> par vos activités et dates.</li>
+                <li>Compléter <code>MEMOIRE44</code> avec fiches noms/lieux.</li>
+              </ol>
+            </Card>
+          </main>
+
+          <footer className="mx-auto max-w-6xl px-4 pb-10 text-xs text-black/50">Gabarit interactif © 2025 — Commune de Séchilienne / AHPV — Démo sans build (React UMD + Tailwind CDN).</footer>
         </div>
-      </header>
+      );
+    }
 
-      {/* Barre filtres époques */}
-      <div className="mx-auto max-w-6xl px-4 mt-4">
-        <Card className="p-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-black/60 mr-1">Époque :</span>
-            {ERAS.map((e) => (
-              <Pill key={e.id} active={era === e.id} onClick={() => setEra(e.id)}>
-                {e.label}
-              </Pill>
-            ))}
-          </div>
-        </Card>
-      </div>
-
-      {/* Contenus */}
-      <main className="mx-auto max-w-6xl px-4 py-6 space-y-6">
-        {tab === "carte" && <Carte places={PLACES} />}
-        {tab === "frise" && <Frise events={EVENTS} eraFilter={era} />}
-        {tab === "genea" && <Genealogies families={FAMILIES} />}
-        {tab === "industrie" && <Industrie industries={INDUSTRIES} />}
-        {tab === "memoire" && <Memoire items={MEMOIRE44} />}
-
-        {/* Encadré Méthodo / Sources */}
-        <Card className="p-4 md:p-6">
-          <SectionTitle icon={<span>🧭</span>} title="Méthodologie & sources" subtitle="Pistes pour ancrer l'histoire locale dans le site municipal" />
-          <ul className="mt-4 grid md:grid-cols-3 gap-3 text-sm text-black/80 list-disc list-inside">
-            <li>Chaque carte ⇢ une fiche détaillée (texte court, galerie, carte, sources, liens AHPV).</li>
-            <li>Frise ⇢ albums thématiques (voies, seigneurs, industrie, 39–45).</li>
-            <li>Généalogies ⇢ arbre navigable (GEDCOM → JSON) + portraits.</li>
-            <li>Industrie ⇢ chronologies + cartes des sites (barrages, usines, ateliers).
-            </li>
-            <li>Mémoire 39–45 ⇢ topographie précise, listes sourcées, QR sur monuments.</li>
-            <li>Accessibilité ⇢ textes clairs, contrastes, légendes, alternatives visuelles.</li>
-          </ul>
-          <div className="mt-4 text-xs text-black/60">
-            Remarque : les étiquettes « à sourcer » indiquent des zones à vérifier/compléter (dates, noms, coordonnées). Remplacez les données d'exemple par vos contenus validés.
-          </div>
-        </Card>
-
-        {/* TODO rapide */}
-        <Card className="p-4 md:p-6">
-          <SectionTitle icon={<span>🗒️</span>} title="À faire (remplacement rapide des contenus)" />
-          <ol className="mt-4 space-y-2 text-sm text-black/80 list-decimal pl-5">
-            <li>Remplacer <code>EVENTS</code> par votre frise sourcée (titres courts, 50–120 caractères d'intro).</li>
-            <li>Remplacer <code>PLACES</code> par vos points (puis brancher une vraie carte si souhaité).</li>
-            <li>Remplacer <code>FAMILIES</code> par votre arbre (Alleman → Simiane → du Mottet, etc.).</li>
-            <li>Remplacer <code>INDUSTRIES</code> par vos activités (dates précises, visuels).</li>
-            <li>Compléter <code>MEMOIRE44</code> avec les fiches noms/lieux et renvois vers vos articles.</li>
-          </ol>
-        </Card>
-      </main>
-
-      <footer className="mx-auto max-w-6xl px-4 pb-10 text-xs text-black/50">
-        Gabarit interactif © 2025 — pour la commune de Séchilienne / Amis de l’Histoire du Pays Vizillois — Design neutre, prêt à habiller selon la charte.
-      </footer>
-    </div>
-  );
-}
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App/>);
+  </script>
+</body>
+</html>
