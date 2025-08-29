@@ -70,11 +70,11 @@
 
     // ========== Composants UI ==========
     const Pill = ({ active, children, onClick }) => (
-      <button onClick={onClick} className={`px-3 py-1 rounded-full text-sm transition-all border ${active ? 'bg-black/90 text-white border-black shadow' : 'bg-white/70 backdrop-blur border-black/10 hover:bg-white'}`}>{children}</button>
+      <button onClick={onClick} className={\`px-3 py-1 rounded-full text-sm transition-all border \${active ? 'bg-black/90 text-white border-black shadow' : 'bg-white/70 backdrop-blur border-black/10 hover:bg-white'}\`}>{children}</button>
     );
 
     const Card = ({ children, className='' }) => (
-      <div className={`rounded-2xl border border-black/10 bg-white/80 backdrop-blur shadow-sm ${className}`}>{children}</div>
+      <div className={\`rounded-2xl border border-black/10 bg-white/80 backdrop-blur shadow-sm \${className}\`}>{children}</div>
     );
 
     const SectionTitle = ({ icon, title, subtitle }) => (
@@ -116,7 +116,7 @@
 
     function Marker({ x, y, label }){
       return (
-        <g transform={`translate(${x}, ${y})`}>
+        <g transform={\`translate(\${x}, \${y})\`}>
           <circle r="7" fill="#111"/>
           <circle r="3" fill="#fff"/>
           <rect x="10" y="-10" rx="6" ry="6" width="130" height="22" fill="#ffffffcc" stroke="#0000001a" />
@@ -245,7 +245,7 @@
                   { id:'industrie', label:'Industrie' },
                   { id:'memoire', label:'Mémoire 39–45' },
                 ].map(t => (
-                  <button key={t.id} className={`px-3 py-2 rounded-xl text-sm border transition ${tab===t.id ? 'bg-black text-white border-black shadow' : 'bg-white/70 border-black/10 hover:bg-white'}`} onClick={() => setTab(t.id)}>{t.label}</button>
+                  <button key={t.id} className={\`px-3 py-2 rounded-xl text-sm border transition \${tab===t.id ? 'bg-black text-white border-black shadow' : 'bg-white/70 border-black/10 hover:bg-white'}\`} onClick={() => setTab(t.id)}>{t.label}</button>
                 ))}
               </nav>
             </div>
