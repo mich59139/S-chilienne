@@ -4,83 +4,39 @@
     { "id": "antiquite", "label": "Antiquité" },
     { "id": "moyenage", "label": "Moyen Âge" },
     { "id": "modernes", "label": "Temps modernes" },
-    { "id": "revolution", "label": "Révolution & Empire" }
+    { "id": "revolution", "label": "Révolution & Empire" },
+    { "id": "XXe", "label": "XXe siècle" }
   ],
   "events": [
-    {
-      "id": "ant-1",
-      "slug": "voie-romaine",
-      "year": "Ier–IVe s.",
-      "era": "antiquite",
-      "title": "Voie romaine de la Romanche",
-      "summary": "Itinéraire antique reliant la cuvette grenobloise au haut Oisans.",
-      "tags": ["patrimoine", "archéo", "voie"],
-      "group": "Antiquité — itinéraires",
-      "order": 10,
-      "importance": 3,
-      "body": "# Voie romaine\n\nTronçons encore visibles en vallée (photos, sources à ajouter)."
-    },
-    {
-      "id": "ma-1",
-      "slug": "guigues-alleman",
-      "year": "v. 1195–1248",
-      "era": "moyenage",
-      "title": "Guigues Iᵉʳ Alleman",
-      "summary": "Premier seigneur de Séchilienne attesté.",
-      "tags": ["seigneurs", "Alleman"],
-      "group": "Moyen Âge — seigneuries",
-      "order": 20,
-      "importance": 3,
-      "body": "# Guigues Iᵉʳ Alleman\n\nPoint de départ de la chronologie seigneuriale locale."
-    },
-    {
-      "id": "ma-3",
-      "slug": "transport-dauphine-1349",
-      "year": "1349",
-      "era": "moyenage",
-      "title": "Transport du Dauphiné à la France",
-      "summary": "Changement de tutelle : effets sur justice et fiscalité.",
-      "tags": ["contexte", "Dauphiné"],
-      "group": "Moyen Âge — contexte delphinal",
-      "order": 30,
-      "importance": 2,
-      "body": "# 1349 : Transport du Dauphiné\n\nContexte et impacts à préciser pour Séchilienne."
-    },
-    {
-      "id": "tm-2",
-      "slug": "maison-du-mottet",
-      "year": "XVIIe s.",
-      "era": "modernes",
-      "title": "Maison du Mottet",
-      "summary": "Montée en puissance locale ; toponymie (Croix du Mottet).",
-      "tags": ["du Mottet", "toponymie"],
-      "group": "Temps modernes — maisons",
-      "order": 50,
-      "importance": 2,
-      "body": "# Maison du Mottet\n\nRôle et toponymie ; sources à intégrer."
-    },
-    {
-      "id": "re-4",
-      "slug": "route-napoleon-1815",
-      "year": "7 mars 1815",
-      "era": "revolution",
-      "title": "Route Napoléon (Laffrey, proximité)",
-      "summary": "Épisode des Cent-Jours à proximité de Séchilienne.",
-      "tags": ["Napoléon", "Cent-Jours"],
-      "group": "Révolution & Empire",
-      "order": 90,
-      "importance": 1,
-      "body": "# 7 mars 1815\n\nRencontre à Laffrey ; encadrer pour l’histoire locale."
-    }
+    { "id":"ant-1","slug":"voie-romaine","section":"chrono","year":"Ier–IVe s.","era":"antiquite","title":"Voie romaine de la Romanche","summary":"Itinéraire antique reliant Grenoble à l’Oisans.","tags":["patrimoine","archéo"],"group":"Antiquité — itinéraires","order":10,"importance":3,"body":"# Voie romaine\n\nTronçons probables en vallée (sources à préciser)." },
+    { "id":"ma-1","slug":"guigues-alleman","section":"chrono","year":"v. 1195–1248","era":"moyenage","title":"Guigues Iᵉʳ Alleman","summary":"Premier seigneur attesté.","tags":["seigneurs"],"group":"Moyen Âge — seigneuries","order":20,"importance":3,"body":"# Guigues Iᵉʳ Alleman\n\nChronologie seigneuriale." },
+    { "id":"re-4","slug":"route-napoleon-1815","section":"chrono","year":"7 mars 1815","era":"revolution","title":"Route Napoléon (Laffrey, proximité)","summary":"Cent-Jours près de Séchilienne.","tags":["Napoléon"],"group":"Révolution & Empire","order":90,"importance":2,"body":"# 7 mars 1815\n\nRencontre à Laffrey ; impacts régionaux." },
+
+    { "id":"w-1","slug":"monument-aux-morts","section":"guerres","year":"1920s","era":"XXe","title":"Monument aux morts","summary":"Mémoire 14-18 / 39-45.","tags":["mémoire"],"group":"Mémoire communale","order":10,"importance":2,"body":"# Monument aux morts\n\nNoms, cérémonies, archives." }
   ],
   "pois": [
-    { "id":"voie", "slug":"poi-voie-romaine", "name":"Voie romaine (tronçon)", "lat":45.055, "lng":5.82, "kind":"patrimoine", "note":"Segment à photographier / sourcer", "order":10, "body":"Tronçon probable. À sourcer." },
-    { "id":"eglise", "slug":"poi-eglise", "name":"Église / noyau paroissial", "lat":45.048, "lng":5.839, "kind":"patrimoine", "note":"Ancrage médiéval (à préciser)", "order":20, "body":"Église et cimetière ancien." },
-    { "id":"chat", "slug":"poi-chateau", "name":"Château de Séchilienne", "lat":45.053, "lng":5.84, "kind":"patrimoine", "note":"Existence antérieure (incendie 1944 hors période)", "order":30, "body":"Site castral ; iconographie à réunir." }
+    { "id":"poi-eglise","slug":"eglise","section":"patrimoine","name":"Église & noyau paroissial","lat":45.048,"lng":5.839,"kind":"patrimoine","note":"Ancrage médiéval (à préciser)","order":10,"body":"# Église\n\nHistoire, remaniements, mobilier." },
+    { "id":"poi-chateau","slug":"chateau","section":"patrimoine","name":"Site castral (château)","lat":45.053,"lng":5.84,"kind":"patrimoine","note":"Traces et iconographie","order":20,"body":"# Site castral\n\nRepères, seigneuries, destructions." },
+    { "id":"poi-voie","slug":"voie-romaine","section":"patrimoine","name":"Voie romaine (tronçon)","lat":45.055,"lng":5.82,"kind":"patrimoine","note":"Segment probable","order":30,"body":"# Voie romaine — repère\n\nCoordonnées, photos…" }
   ],
   "families": [
-    { "name":"Alleman",  "slug":"fam-alleman",  "period":"XIIIe–XIVe",  "note":"Lignée initiale.", "order":10, "body":"Détails, actes et hommages." },
-    { "name":"Simiane",  "slug":"fam-simiane",  "period":"XVIe",        "note":"Transmission/alliances.", "order":20, "body":"Filiations à préciser." },
-    { "name":"du Mottet","slug":"fam-du-mottet","period":"XVIIe–XVIIIe","note":"Toponymie et rôle local.", "order":30, "body":"Repères et sources." }
-  ]
+    { "name":"Alleman","slug":"alleman","section":"personnalites","period":"XIIIe–XIVe","note":"Lignée seigneuriale","order":10,"body":"# Famille Alleman\n\nActes, hommages, possessions." },
+    { "name":"Simiane","slug":"simiane","section":"personnalites","period":"XVIe","note":"Alliances / transmissions","order":20,"body":"# Famille de Simiane\n\nFiliations à préciser." },
+    { "name":"du Mottet","slug":"du-mottet","section":"personnalites","period":"XVIIe–XVIIIe","note":"Toponymie (Croix du Mottet)","order":30,"body":"# Maison du Mottet\n\nRepères et rôles." }
+  ],
+  "articles": [
+    { "id":"vie-ecole","slug":"ecoles-hameaux","section":"vie","title":"Écoles & hameaux","summary":"Organisation scolaire, vie des hameaux.","order":10,"body":"# Écoles & hameaux\n\nListes, photos, témoignages." },
+    { "id":"eco-trav","slug":"travaux-industrie","section":"economie","title":"De la meule à l’usine","summary":"Transition vers l’industrialisation.","order":20,"body":"# De la meule à l’usine\n\nDates, sites, effets sociaux." }
+  ],
+  "gallery": [
+    { "id":"img-1","src":"https://upload.wikimedia.org/wikipedia/commons/3/3f/Placeholder_view_vector.svg","caption":"Carte postale — bourg (exemple)","credit":"Coll. privée","order":10 }
+  ],
+  "resources": [
+    { "id":"bib-1","label":"AHPV — Bulletins","url":"#","note":"Sélection d’articles" },
+    { "id":"adi","label":"Archives dép. de l’Isère (ADI)","url":"#","note":"Registres, plans" }
+  ],
+  "contribute": {
+    "email":"mairie@sechilienne.fr",
+    "pitch":"Partagez vos souvenirs, photos, documents : l’histoire s’écrit avec vous !"
+  }
 }
